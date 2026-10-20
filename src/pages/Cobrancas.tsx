@@ -114,23 +114,11 @@ export const CobrancasPage: React.FC<CobrancasPageProps> = ({
           </h1>
         </div>
 
-        {/* Seletores de Filtro e Competência + Botão de Bônus */}
+        {/* Seletores de Filtro e Competência */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {onOpenConcederBonusModal && (
-            <button
-              onClick={() => onOpenConcederBonusModal()}
-              className="btn btn-secondary"
-              style={{ color: '#ec4899', borderColor: 'rgba(236,72,153,0.3)', fontWeight: 600 }}
-              title="Conceder bônus a um cliente"
-            >
-              <Gift size={16} color="#ec4899" />
-              <span>Conceder Bônus</span>
-            </button>
-          )}
-
           <select
             className="form-control"
-            style={{ width: '215px', height: '38px', fontSize: '0.875rem' }}
+            style={{ width: '220px', height: '42px', minHeight: '42px', padding: '0 12px', fontSize: '0.9rem' }}
             value={filtroAba}
             onChange={e => setFiltroAba(e.target.value as any)}
             title="Filtrar faturas por ciclo ou status"
@@ -150,7 +138,7 @@ export const CobrancasPage: React.FC<CobrancasPageProps> = ({
 
           <select
             className="form-control"
-            style={{ width: '160px', height: '38px', fontSize: '0.875rem' }}
+            style={{ width: '170px', height: '42px', minHeight: '42px', padding: '0 12px', fontSize: '0.9rem' }}
             value={mesFiltro}
             onChange={e => setMesFiltro(Number(e.target.value))}
             title="Mês de Competência"

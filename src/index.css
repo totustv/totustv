@@ -566,6 +566,17 @@ body {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
+select.form-control {
+  height: 42px;
+  min-height: 42px;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 12px;
+  padding-right: 28px;
+  line-height: normal;
+  cursor: pointer;
+}
+
 /* Modais */
 .modal-overlay {
   position: fixed;
