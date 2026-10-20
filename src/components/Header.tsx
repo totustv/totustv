@@ -10,7 +10,6 @@ import {
   Tv,
 } from 'lucide-react';
 import { useTotus } from '../context/AppContext';
-import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -26,7 +25,6 @@ export const Header: React.FC<HeaderProps> = ({
   onSearchChange,
 }) => {
   const { kpis } = useTotus();
-  const { currentUser, trocarPerfilTeste, usuariosDisponiveis } = useAuth();
   const [isDark, setIsDark] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -150,33 +148,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               </>
             )}
-          </div>
-
-          {/* Seletor Rápido de Perfil para Testes de Isolamento e RLS (no mobile fica no menu lateral) */}
-          <div className="header-profile">
-            <select
-              className="form-control"
-              value={currentUser?.id || ''}
-              onChange={e => trocarPerfilTeste(e.target.value)}
-              title="Alternar entre usuários para testar o isolamento de carteiras"
-              style={{
-                height: '36px',
-                fontSize: '0.775rem',
-                fontWeight: 600,
-                padding: '0 8px',
-                maxWidth: '190px',
-                backgroundColor: 'var(--bg-tertiary)',
-                borderColor: 'var(--border-subtle)',
-              }}
-            >
-              {usuariosDisponiveis.map(u => (
-                <option key={u.id} value={u.id}>
-                  {u.role === 'admin' ? '👑 ' : '💼 '}
-                  {u.nome.split(' ')[0]} ({u.role.toUpperCase()})
-                  {u.status === 'suspenso' ? ' [SUSPENSO]' : ''}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Toggle Dark/Light Mode */}

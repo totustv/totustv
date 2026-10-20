@@ -34,7 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   aniversariantesCount = 0,
   promessasCount = 0,
 }) => {
-  const { currentUser, isAdmin, isReseller, logout, trocarPerfilTeste, usuariosDisponiveis } = useAuth();
+  const { currentUser, isAdmin, isReseller, logout } = useAuth();
 
   // Menu adaptado estritamente por perfil de usuário
   const menuItems = [
@@ -258,23 +258,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             gap: '12px',
           }}
         >
-          {/* Seletor de perfil de teste (visível apenas no mobile; no desktop fica no header) */}
-          <select
-            className="form-control sidebar-profile-switch"
-            value={currentUser?.id || ''}
-            onChange={e => trocarPerfilTeste(e.target.value)}
-            title="Alternar entre usuários para testar o isolamento de carteiras"
-            id="select-sidebar-perfil"
-          >
-            {usuariosDisponiveis.map(u => (
-              <option key={u.id} value={u.id}>
-                {u.role === 'admin' ? '👑 ' : '💼 '}
-                {u.nome.split(' ')[0]} ({u.role.toUpperCase()})
-                {u.status === 'suspenso' ? ' [SUSPENSO]' : ''}
-              </option>
-            ))}
-          </select>
-
           {/* Card do Usuário Conectado */}
           <div
             style={{
