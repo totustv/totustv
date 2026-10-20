@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Menu,
   Sun,
@@ -8,7 +8,6 @@ import {
   Bell,
   CheckCircle,
   Tv,
-  X,
 } from 'lucide-react';
 import { useTotus } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -30,13 +29,6 @@ export const Header: React.FC<HeaderProps> = ({
   const { currentUser, trocarPerfilTeste, usuariosDisponiveis } = useAuth();
   const [isDark, setIsDark] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  // Busca expansível usada apenas no layout mobile
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const mobileSearchRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (mobileSearchOpen) mobileSearchRef.current?.focus();
-  }, [mobileSearchOpen]);
 
   const toggleTheme = () => {
     const nextDark = !isDark;
@@ -86,16 +78,6 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="header-right">
-          {/* Botão de busca (somente mobile) */}
-          <button
-            onClick={() => setMobileSearchOpen(o => !o)}
-            className="btn btn-secondary btn-icon header-search-toggle"
-            title="Buscar"
-            id="btn-mobile-search"
-          >
-            {mobileSearchOpen ? <X size={18} /> : <Search size={18} />}
-          </button>
-
           {/* Notificações rápidas */}
           <div style={{ position: 'relative' }}>
             <button
@@ -220,21 +202,6 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Busca expandida (somente mobile) */}
-      {mobileSearchOpen && (
-        <div className="header-mobile-search">
-          <Search size={16} className="header-search-icon" />
-          <input
-            ref={mobileSearchRef}
-            type="search"
-            className="form-control"
-            placeholder="Buscar cliente, WhatsApp, fatura..."
-            value={searchTerm}
-            onChange={e => onSearchChange(e.target.value)}
-            id="input-mobile-search"
-          />
-        </div>
-      )}
     </header>
   );
 };
