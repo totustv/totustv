@@ -217,6 +217,9 @@ const MainApp: React.FC = () => {
             setGlobalSearch(val);
             if (currentPage !== 'clientes') setCurrentPage('clientes');
           }}
+          onNavigate={setCurrentPage}
+          onOpenWhatsAppModal={(cli, cob, tipo) => setModalWhatsApp({ open: true, cliente: cli, cobranca: cob, tipoMsg: tipo })}
+          onOpenPagamentoModal={(cobId) => setModalPagamento({ open: true, cobrancaId: cobId })}
         />
 
         {/* Corpo da Página Selecionada */}

@@ -156,3 +156,56 @@ export function formatStatusBadge(status?: string): string {
   if (status === 'dispensado_aniversario') return 'aniversariante';
   return status.replace(/_/g, ' ');
 }
+
+/**
+ * Retorna se o cliente faz aniversário hoje
+ */
+export function isBirthdayToday(birthDateStr?: string | null): boolean {
+  if (!birthDateStr) return false;
+  const parts = birthDateStr.split('T')[0].split('-');
+  if (parts.length !== 3) return false;
+  const today = new Date();
+  const m = today.getMonth() + 1;
+  const d = today.getDate();
+  return parseInt(parts[1], 10) === m && parseInt(parts[2], 10) === d;
+}
+
+/**
+ * Retorna se o cliente faz aniversário no mês corrente
+ */
+export function isBirthdayThisMonth(birthDateStr?: string | null): boolean {
+  if (!birthDateStr) return false;
+  const parts = birthDateStr.split('T')[0].split('-');
+  if (parts.length !== 3) return false;
+  const today = new Date();
+  const m = today.getMonth() + 1;
+  return parseInt(parts[1], 10) === m;
+}
+
+/**
+ * Retorna quantos dias faltam para o aniversário do cliente no mês atual (ou negativo se já passou)
+ */
+export function getDaysUntilBirthday(birthDateStr?: string | null): number | null {
+  if (!birthDateStr) return null;
+  const parts = birthDateStr.split('T')[0].split('-');
+  if (parts.length !== 3) return null;
+  const today = new Date();
+  const currentDay = today.getDate();
+  const birthDay = parseInt(parts[2], 10);
+  return birthDay - currentDay;
+}
+
+/**
+ * Retorna quantos dias uma cobrança está atrasada
+ */
+export function getOverdueDays(dueDateStr: string): number {
+  if (!dueDateStr) return 0;
+  const parts = dueDateStr.split('T')[0].split('-');
+  if (parts.length !== 3) return 0;
+  const due = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffTime = today.getTime() - due.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return Math.max(0, diffDays);
+}
