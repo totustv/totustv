@@ -6,11 +6,9 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  ShieldCheck,
   AlertCircle,
   CheckCircle,
   HelpCircle,
-  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -19,7 +17,7 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
-  const { login, recuperarSenha, usuariosDisponiveis } = useAuth();
+  const { login, recuperarSenha } = useAuth();
   
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -72,12 +70,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
     } else {
       setErrorMsg(res.error || 'Erro ao processar recuperação de senha.');
     }
-  };
-
-  const selecionarContaDemonstracao = (userEmail: string) => {
-    setEmail(userEmail);
-    setSenha(userEmail === 'admin@totustv.com' ? 'Souzik@8451' : '123456');
-    setErrorMsg(null);
   };
 
   return (
@@ -172,7 +164,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
               TOTUS <span style={{ color: '#818cf8' }}>TV</span>
             </h1>
             <p style={{ fontSize: '0.825rem', color: '#94a3b8' }}>
-              Gestão Financeira & Controle Multi-Revendedor
+              Painel de Controle & Gestão Financeira
             </p>
           </div>
 
@@ -369,126 +361,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
               )}
             </button>
           </form>
-
-          {/* Atalhos Rápidos para Demonstração & Testes de Papéis */}
-          <div
-            style={{
-              marginTop: '28px',
-              paddingTop: '20px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-            }}
-          >
-            <div
-              style={{
-                fontSize: '0.725rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: '#64748b',
-                marginBottom: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <span>Acesso Rápido para Avaliação</span>
-              <ShieldCheck size={14} color="#6366f1" />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <button
-                type="button"
-                onClick={() => selecionarContaDemonstracao('admin@totustv.com')}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                  border: '1px solid rgba(99, 102, 241, 0.3)',
-                  color: '#e2e8f0',
-                  fontSize: '0.775rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <div>
-                  <strong style={{ color: '#818cf8' }}>Administrador Geral:</strong> admin@totustv.com
-                </div>
-                <span className="badge badge-em-dia" style={{ fontSize: '0.65rem' }}>Acesso Total</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => selecionarContaDemonstracao('revendedor.sp@totustv.com')}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                  border: '1px solid rgba(6, 182, 212, 0.3)',
-                  color: '#e2e8f0',
-                  fontSize: '0.775rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <div>
-                  <strong style={{ color: '#22d3ee' }}>Revendedor A (SP):</strong> revendedor.sp@totustv.com
-                </div>
-                <span className="badge badge-pendente" style={{ fontSize: '0.65rem' }}>Carteira A</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => selecionarContaDemonstracao('revendedor.rj@totustv.com')}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
-                  color: '#e2e8f0',
-                  fontSize: '0.775rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <div>
-                  <strong style={{ color: '#34d399' }}>Revendedor B (RJ):</strong> revendedor.rj@totustv.com
-                </div>
-                <span className="badge badge-pendente" style={{ fontSize: '0.65rem' }}>Carteira B</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => selecionarContaDemonstracao('marcos.suspenso@totustv.com')}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(244, 63, 94, 0.1)',
-                  border: '1px solid rgba(244, 63, 94, 0.3)',
-                  color: '#e2e8f0',
-                  fontSize: '0.775rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <div>
-                  <strong style={{ color: '#f87171' }}>Conta Suspensa:</strong> marcos.suspenso@totustv.com
-                </div>
-                <span className="badge badge-atrasado" style={{ fontSize: '0.65rem' }}>Bloqueio</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
