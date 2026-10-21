@@ -44,7 +44,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
   };
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal-content">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -69,7 +69,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="modal-grid modal-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
               <label className="form-label">WhatsApp *</label>
               <input
@@ -96,7 +96,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
           </div>
 
           {/* Localização (País, Estado e Cidade) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.8fr', gap: '12px' }}>
+          <div className="modal-grid modal-grid-3" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.8fr', gap: '12px' }}>
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Globe size={13} color="var(--accent-primary)" />
@@ -168,7 +168,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="modal-grid modal-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
               <label className="form-label">Dia Preferencial de Vencimento *</label>
               <select
@@ -196,7 +196,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="modal-grid modal-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="form-group">
               <label className="form-label">Data de Início do Serviço</label>
               <input
