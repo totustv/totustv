@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Settings,
   Database,
-  MessageSquare,
   Save,
   RotateCcw,
   Download,
@@ -146,71 +145,6 @@ export const ConfiguracoesPage: React.FC = () => {
                 value={formData.telefone_suporte}
                 onChange={e => setFormData({ ...formData, telefone_suporte: e.target.value })}
                 placeholder="Ex: 11987654321"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Modelos de Mensagem do WhatsApp */}
-        <div className="card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <MessageSquare size={20} color="#25d366" />
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
-              Modelos de Mensagens (WhatsApp)
-            </h2>
-          </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-subtle)', marginBottom: '16px' }}>
-            Variáveis suportadas: <code>{'{NOME}'}</code>, <code>{'{DATA}'}</code>, <code>{'{VALOR}'}</code>, <code>{'{PIX}'}</code>
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="form-group">
-              <label className="form-label">1. Lembrete: Vencimento Amanhã</label>
-              <textarea
-                className="form-control"
-                rows={2}
-                value={formData.msg_lembrete_amanha}
-                onChange={e => setFormData({ ...formData, msg_lembrete_amanha: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">2. Lembrete: Vencimento Hoje</label>
-              <textarea
-                className="form-control"
-                rows={2}
-                value={formData.msg_lembrete_hoje}
-                onChange={e => setFormData({ ...formData, msg_lembrete_hoje: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">3. Cobrança de Fatura Pendente / Atrasada</label>
-              <textarea
-                className="form-control"
-                rows={2}
-                value={formData.msg_cobranca_pendente}
-                onChange={e => setFormData({ ...formData, msg_cobranca_pendente: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">4. Confirmação de Promessa de Pagamento</label>
-              <textarea
-                className="form-control"
-                rows={2}
-                value={formData.msg_promessa_confirmar}
-                onChange={e => setFormData({ ...formData, msg_promessa_confirmar: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">5. Recibo / Confirmação de Pagamento Recebido</label>
-              <textarea
-                className="form-control"
-                rows={2}
-                value={formData.msg_pagamento_confirmado}
-                onChange={e => setFormData({ ...formData, msg_pagamento_confirmado: e.target.value })}
               />
             </div>
           </div>
