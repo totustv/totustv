@@ -14,6 +14,7 @@ import {
   FormaPagamento,
   UserProfile,
   AuditLog,
+  ModeloMensagem,
 } from '../types';
 import { totusDB } from '../lib/db';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -33,6 +34,7 @@ interface AppContextType {
   config: ConfiguracoesApp;
   usuarios: UserProfile[];
   logsAuditoria: AuditLog[];
+  modelosMensagem: ModeloMensagem[];
   
   // Ações do Banco
   salvarCliente: (data: any) => Cliente;
@@ -58,6 +60,9 @@ interface AppContextType {
   cancelarDespesa: (id: string, motivo: string) => void;
   salvarCategoriaDespesa: (nome: string, cor?: string, icone?: string) => void;
   salvarConfig: (cfg: Partial<ConfiguracoesApp>) => void;
+  salvarModeloMensagem: (data: Partial<ModeloMensagem> & { titulo: string; texto: string }) => ModeloMensagem;
+  deletarModeloMensagem: (id: string) => void;
+  resetarModelosPadrao: () => void;
   resetarBanco: () => void;
   exportarBackup: () => string;
   importarBackup: (json: string) => boolean;
@@ -189,6 +194,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const config = rawData.config;
   const usuarios = rawData.usuarios || [];
   const logsAuditoria = isAdmin ? (rawData.logs_auditoria || []) : [];
+  const modelosMensagem = useMemo(() => {
+    return totusDB.getModelosMensagem();
+  }, [rawData.modelos_mensagem, rawData.config]);
 
   // Cálculos consolidados e reais
   const kpis = useMemo(() => {
@@ -580,6 +588,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             detalhes: 'Configurações globais do sistema atualizadas',
           });
         },
+        modelosMensagem,
+        salvarModeloMensagem: (m) => totusDB.saveModeloMensagem(m),
+        deletarModeloMensagem: (id) => totusDB.deleteModeloMensagem(id),
+        resetarModelosPadrao: () => totusDB.resetarModelosPadrao(),
         resetarBanco: () => {
           if (!isAdmin) {
             throw new Error('Apenas administradores podem resetar o banco de dados');

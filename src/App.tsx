@@ -18,6 +18,7 @@ import { UsuariosPage } from './pages/Usuarios';
 import { RelatoriosPage } from './pages/Relatorios';
 import { ConfiguracoesPage } from './pages/Configuracoes';
 import { HistoricoPage } from './pages/Historico';
+import { WhatsAppPage } from './pages/WhatsApp';
 
 // Modais
 import { ClienteModal } from './components/modals/ClienteModal';
@@ -187,6 +188,8 @@ const MainApp: React.FC = () => {
           );
         }
         return <HistoricoPage />;
+      case 'whatsapp':
+        return <WhatsAppPage />;
       default:
         return <Dashboard onNavigate={setCurrentPage} onOpenPagamentoModal={() => {}} onOpenWhatsAppModal={() => {}} />;
     }

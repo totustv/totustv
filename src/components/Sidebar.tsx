@@ -14,6 +14,7 @@ import {
   LogOut,
   User,
   History,
+  MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -55,6 +56,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Vencimentos',
       icon: CreditCard,
       badge: promessasCount > 0 ? promessasCount : undefined,
+      visible: true,
+    },
+    {
+      id: 'whatsapp',
+      label: 'WhatsApp',
+      icon: MessageCircle,
       visible: true,
     },
     {

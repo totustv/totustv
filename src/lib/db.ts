@@ -17,6 +17,7 @@ import {
   FormaPagamento,
   UserProfile,
   AuditLog,
+  ModeloMensagem,
 } from '../types';
 import { getValidDateForMonth, isPastDate } from './utils';
 import { supabase, isSupabaseConfigured } from './supabase';
@@ -108,6 +109,59 @@ const INITIAL_CONFIG: ConfiguracoesApp = {
   msg_pagamento_confirmado: 'Olá, {NOME}! Pagamento recebido com sucesso. Obrigado pela preferência e por continuar com a Totus TV! 🎉',
   permite_duplo_bonus: false,
 };
+
+export const INITIAL_MODELOS_MENSAGEM: ModeloMensagem[] = [
+  {
+    id: 'mod-1',
+    titulo: '1. Lembrete: Vencimento Amanhã',
+    texto: 'Olá, {NOME}! Tudo bem? Passando para lembrar que o vencimento da sua mensalidade Totus TV é amanhã, dia {DATA}. Caso precise de alguma informação, estou à disposição!',
+    categoria: 'lembrete',
+    padrao: true,
+    created_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'mod-2',
+    titulo: '2. Lembrete: Vencimento Hoje',
+    texto: 'Olá, {NOME}! Tudo bem? Passando para avisar que sua mensalidade Totus TV vence hoje, dia {DATA}. Chave Pix para pagamento: {PIX}',
+    categoria: 'lembrete',
+    padrao: true,
+    created_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'mod-3',
+    titulo: '3. Cobrança de Fatura Pendente / Atrasada',
+    texto: 'Olá, {NOME}! Tudo bem? Identifiquei que sua mensalidade Totus TV está pendente. Você poderia me informar quando pretende realizar o pagamento?',
+    categoria: 'cobranca',
+    padrao: true,
+    created_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'mod-4',
+    titulo: '4. Confirmação de Promessa de Pagamento',
+    texto: 'Olá, {NOME}! Tudo bem? Estou passando para confirmar o pagamento que combinamos para hoje, referente à sua mensalidade Totus TV.',
+    categoria: 'promessa',
+    padrao: true,
+    created_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'mod-5',
+    titulo: '5. Recibo / Confirmação de Pagamento Recebido',
+    texto: 'Olá, {NOME}! Pagamento recebido com sucesso. Obrigado pela preferência e por continuar com a Totus TV! 🎉',
+    categoria: 'recibo',
+    padrao: true,
+    created_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'mod-6',
+    titulo: '6. Cobrança Especial: Vencimento Dia 10',
+    texto: 'Olá, {NOME}! Tudo bem? Passando para lembrar que sua mensalidade Totus TV referente ao vencimento do dia 10 ({DATA}) no valor de {VALOR} já está disponível para acerto. Chave Pix: {PIX}. Qualquer dúvida estou à disposição!',
+    categoria: 'cobranca',
+    dia_vencimento_alvo: 10,
+    padrao: false,
+    created_at: '2026-01-01T00:00:00Z',
+  },
+];
+
 
 const INITIAL_CATEGORIAS: CategoriaDespesa[] = [
   { id: 'cat-1', nome: 'Servidores e Hospedagem', cor: '#3b82f6', icone: 'Server' },
@@ -705,6 +759,7 @@ export interface TotusDatabase {
   fluxo_caixa: FluxoCaixaItem[];
   usuarios: UserProfile[];
   logs_auditoria: AuditLog[];
+  modelos_mensagem?: ModeloMensagem[];
 }
 
 export class TotusDBManager {
@@ -748,6 +803,7 @@ export class TotusDBManager {
           fluxo_caixa: parsed.fluxo_caixa || INITIAL_FLUXO,
           usuarios: parsed.usuarios && parsed.usuarios.length > 0 ? parsed.usuarios : INITIAL_USERS,
           logs_auditoria: parsed.logs_auditoria || INITIAL_AUDIT_LOGS,
+          modelos_mensagem: parsed.modelos_mensagem && parsed.modelos_mensagem.length > 0 ? parsed.modelos_mensagem : INITIAL_MODELOS_MENSAGEM,
         };
       }
     } catch (e) {
@@ -769,6 +825,7 @@ export class TotusDBManager {
       fluxo_caixa: INITIAL_FLUXO,
       usuarios: INITIAL_USERS,
       logs_auditoria: INITIAL_AUDIT_LOGS,
+      modelos_mensagem: INITIAL_MODELOS_MENSAGEM,
     };
   }
 
@@ -813,6 +870,7 @@ export class TotusDBManager {
       fluxo_caixa: INITIAL_FLUXO,
       usuarios: INITIAL_USERS,
       logs_auditoria: INITIAL_AUDIT_LOGS,
+      modelos_mensagem: INITIAL_MODELOS_MENSAGEM,
     };
     this.persist();
   }
@@ -1388,6 +1446,79 @@ export class TotusDBManager {
 
     this.persist();
     return contato;
+  }
+
+  // ----------------------------------------------------------------------------
+  // MODELOS DE MENSAGENS / LEMBRETES (WHATSAPP)
+  // ----------------------------------------------------------------------------
+  public getModelosMensagem(): ModeloMensagem[] {
+    return this.db.modelos_mensagem && this.db.modelos_mensagem.length > 0
+      ? this.db.modelos_mensagem
+      : INITIAL_MODELOS_MENSAGEM;
+  }
+
+  public saveModeloMensagem(data: Partial<ModeloMensagem> & { titulo: string; texto: string }): ModeloMensagem {
+    if (!this.db.modelos_mensagem || this.db.modelos_mensagem.length === 0) {
+      this.db.modelos_mensagem = [...INITIAL_MODELOS_MENSAGEM];
+    }
+
+    const isEdit = Boolean(data.id);
+    const id = data.id || `mod-${Date.now()}`;
+    const now = new Date().toISOString();
+
+    let item: ModeloMensagem;
+    if (isEdit) {
+      const idx = this.db.modelos_mensagem.findIndex(m => m.id === id);
+      if (idx === -1) throw new Error('Modelo de mensagem não encontrado');
+      const old = this.db.modelos_mensagem[idx];
+      item = {
+        ...old,
+        ...data,
+        titulo: data.titulo.trim(),
+        texto: data.texto.trim(),
+        categoria: data.categoria || old.categoria || 'geral',
+        dia_vencimento_alvo: data.dia_vencimento_alvo !== undefined ? (data.dia_vencimento_alvo ? Number(data.dia_vencimento_alvo) : undefined) : old.dia_vencimento_alvo,
+        updated_at: now,
+      };
+      this.db.modelos_mensagem[idx] = item;
+    } else {
+      item = {
+        id,
+        titulo: data.titulo.trim(),
+        texto: data.texto.trim(),
+        categoria: data.categoria || 'geral',
+        dia_vencimento_alvo: data.dia_vencimento_alvo ? Number(data.dia_vencimento_alvo) : undefined,
+        padrao: false,
+        created_at: now,
+        updated_at: now,
+      };
+      this.db.modelos_mensagem.push(item);
+    }
+
+    // Se editou os modelos padrões 1 a 5, sincroniza com config
+    if (item.id === 'mod-1') this.db.config.msg_lembrete_amanha = item.texto;
+    if (item.id === 'mod-2') this.db.config.msg_lembrete_hoje = item.texto;
+    if (item.id === 'mod-3') this.db.config.msg_cobranca_pendente = item.texto;
+    if (item.id === 'mod-4') this.db.config.msg_promessa_confirmar = item.texto;
+    if (item.id === 'mod-5') this.db.config.msg_pagamento_confirmado = item.texto;
+
+    this.persist();
+    return item;
+  }
+
+  public deleteModeloMensagem(id: string): void {
+    if (!this.db.modelos_mensagem || this.db.modelos_mensagem.length === 0) {
+      this.db.modelos_mensagem = [...INITIAL_MODELOS_MENSAGEM];
+    }
+    const idx = this.db.modelos_mensagem.findIndex(m => m.id === id);
+    if (idx === -1) throw new Error('Modelo não encontrado');
+    this.db.modelos_mensagem.splice(idx, 1);
+    this.persist();
+  }
+
+  public resetarModelosPadrao(): void {
+    this.db.modelos_mensagem = [...INITIAL_MODELOS_MENSAGEM];
+    this.persist();
   }
 
   // ----------------------------------------------------------------------------

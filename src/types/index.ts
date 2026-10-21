@@ -214,3 +214,14 @@ export interface ConfiguracoesApp {
   msg_pagamento_confirmado: string;
   permite_duplo_bonus: boolean;
 }
+
+export interface ModeloMensagem {
+  id: string;
+  titulo: string;
+  texto: string;
+  categoria: 'lembrete' | 'cobranca' | 'promessa' | 'recibo' | 'geral';
+  dia_vencimento_alvo?: number; // ex: 10, 20, 30 ou undefined para qualquer dia
+  padrao?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
