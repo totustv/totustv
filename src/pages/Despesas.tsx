@@ -10,6 +10,8 @@ import {
   Repeat,
   Tag,
   DollarSign,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { useTotus } from '../context/AppContext';
 import { Despesa, FormaPagamento } from '../types';
@@ -21,7 +23,7 @@ interface DespesasPageProps {
 }
 
 export const DespesasPage: React.FC<DespesasPageProps> = ({ onOpenNovaDespesa, onEditDespesa }) => {
-  const { despesas, marcarDespesaComoPaga, cancelarDespesa } = useTotus();
+  const { despesas, marcarDespesaComoPaga, cancelarDespesa, excluirDespesa } = useTotus();
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<'todas' | 'paga' | 'pendente' | 'cancelada'>('todas');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('todas');
@@ -221,13 +223,34 @@ export const DespesasPage: React.FC<DespesasPageProps> = ({ onOpenNovaDespesa, o
                           </button>
                         )}
 
+                        <button
+                          onClick={() => onEditDespesa(d)}
+                          className="btn btn-secondary btn-sm btn-icon"
+                          title="Editar despesa"
+                        >
+                          <Pencil size={14} />
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Deseja realmente excluir a despesa "${d.descricao}" (${formatCurrency(d.valor)})?`)) {
+                              excluirDespesa(d.id);
+                            }
+                          }}
+                          className="btn btn-secondary btn-sm btn-icon"
+                          title="Excluir despesa"
+                          style={{ color: 'var(--accent-rose)' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+
                         {d.status === 'pendente' && (
                           <button
                             onClick={() => {
                               const mot = prompt('Motivo do cancelamento:');
                               if (mot) cancelarDespesa(d.id, mot);
                             }}
-                            className="btn btn-secondary btn-sm"
+                            className="btn btn-secondary btn-sm btn-icon"
                             title="Cancelar despesa"
                           >
                             <XCircle size={14} color="var(--accent-rose)" />

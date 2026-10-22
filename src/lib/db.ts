@@ -899,10 +899,13 @@ export class TotusDBManager {
   // ----------------------------------------------------------------------------
   // SINCRONIZAÇÃO COMPLETA COM NUVEM SUPABASE
   // ----------------------------------------------------------------------------
-  public async pushToSupabase(table: string, payload: any, mode: 'upsert' | 'insert' | 'update' = 'upsert', matchKey?: string, matchVal?: any) {
+  public async pushToSupabase(table: string, payload: any, mode: 'upsert' | 'insert' | 'update' | 'delete' = 'upsert', matchKey?: string, matchVal?: any) {
     if (!isSupabaseConfigured || !supabase) return;
     try {
-      if (mode === 'insert') {
+      if (mode === 'delete' && matchKey && matchVal) {
+        const { error } = await supabase.from(table).delete().eq(matchKey, matchVal);
+        if (error) console.error(`[Supabase delete ${table}]`, error.message);
+      } else if (mode === 'insert') {
         const { error } = await supabase.from(table).insert(payload);
         if (error) console.error(`[Supabase insert ${table}]`, error.message);
       } else if (mode === 'update' && matchKey && matchVal) {
@@ -1806,6 +1809,10 @@ export class TotusDBManager {
       } else {
         this.db.fluxo_caixa.push(flxItem);
       }
+    } else {
+      // Se a despesa foi editada e não está paga, remove do fluxo de caixa
+      const flxId = `flx-desp-${despesa.id}`;
+      this.db.fluxo_caixa = this.db.fluxo_caixa.filter(f => f.id !== flxId && f.origem_id !== despesa.id);
     }
 
     this.persist();
@@ -1868,6 +1875,20 @@ export class TotusDBManager {
 
     this.persist();
     this.pushToSupabase('despesas', { status: desp.status, motivo_cancelamento: desp.motivo_cancelamento, updated_at: desp.updated_at }, 'update', 'id', desp.id);
+  }
+
+  public excluirDespesa(despesaId: string) {
+    const idx = this.db.despesas.findIndex(d => d.id === despesaId);
+    if (idx !== -1) {
+      this.db.despesas.splice(idx, 1);
+    }
+    // Remove do fluxo de caixa se houver saída correspondente
+    const flxId = `flx-desp-${despesaId}`;
+    this.db.fluxo_caixa = this.db.fluxo_caixa.filter(f => f.id !== flxId && f.origem_id !== despesaId && f.id !== despesaId);
+
+    this.persist();
+    this.pushToSupabase('despesas', { id: despesaId }, 'delete', 'id', despesaId);
+    this.pushToSupabase('fluxo_caixa', { id: flxId }, 'delete', 'id', flxId);
   }
 
   // ----------------------------------------------------------------------------

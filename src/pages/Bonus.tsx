@@ -169,58 +169,7 @@ export const BonusPage: React.FC<BonusPageProps> = ({
           );
         })}
 
-        {/* Card Interativo para Adicionar Novo Bônus */}
-        <button
-          type="button"
-          onClick={() => setModalPrograma({ open: true, programa: null })}
-          className="card"
-          style={{
-            border: '2px dashed var(--border-hover)',
-            backgroundColor: 'rgba(236, 72, 153, 0.03)',
-            padding: '18px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            cursor: 'pointer',
-            minHeight: '110px',
-            transition: 'all 0.2s ease',
-            gap: '8px',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.borderColor = '#ec4899';
-            e.currentTarget.style.backgroundColor = 'rgba(236, 72, 153, 0.08)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.borderColor = 'var(--border-hover)';
-            e.currentTarget.style.backgroundColor = 'rgba(236, 72, 153, 0.03)';
-          }}
-          title="Clique para criar um novo card de bônus"
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(236, 72, 153, 0.15)',
-              color: '#ec4899',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Plus size={20} />
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
-              + Criar Novo Bônus
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Adicione um novo card com título e descrição
-            </div>
-          </div>
-        </button>
+
       </div>
 
       {/* Mini Resumo */}
@@ -241,23 +190,20 @@ export const BonusPage: React.FC<BonusPageProps> = ({
         </div>
       </div>
 
-      {/* Filtros por Tipo */}
-      <div className="chip-row" style={{ display: 'flex', gap: '8px' }}>
-        {[
-          { id: 'todos', label: 'Todos os Benefícios' },
-          { id: 'indicacao', label: '🤝 Por Indicação' },
-          { id: 'aniversario', label: '🎂 Por Aniversário' },
-          { id: 'manual', label: '⚙️ Concedidos Manualmente' },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setFiltroTipo(tab.id as any)}
-            className={`btn btn-sm ${filtroTipo === tab.id ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ borderRadius: 'var(--radius-full)' }}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Filtro por Tipo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <select
+          className="form-control"
+          value={filtroTipo}
+          onChange={e => setFiltroTipo(e.target.value as any)}
+          style={{ width: '260px', maxWidth: '100%' }}
+          title="Filtrar benefícios por tipo"
+        >
+          <option value="todos">Todos os Benefícios</option>
+          <option value="indicacao">🤝 Por Indicação</option>
+          <option value="aniversario">🎂 Por Aniversário</option>
+          <option value="manual">⚙️ Concedidos Manualmente</option>
+        </select>
       </div>
 
       {/* Tabela de Benefícios */}

@@ -58,6 +58,7 @@ interface AppContextType {
   salvarDespesa: (params: any) => void;
   marcarDespesaComoPaga: (id: string, params: { data_pagamento: string; forma_pagamento: FormaPagamento }) => void;
   cancelarDespesa: (id: string, motivo: string) => void;
+  excluirDespesa: (id: string) => void;
   salvarCategoriaDespesa: (nome: string, cor?: string, icone?: string) => void;
   salvarConfig: (cfg: Partial<ConfiguracoesApp>) => void;
   salvarModeloMensagem: (data: Partial<ModeloMensagem> & { titulo: string; texto: string }) => ModeloMensagem;
@@ -566,6 +567,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             tabela: 'despesas',
             registro_id: id,
             detalhes: `Cancelamento de despesa. Motivo: ${m || '-'}`,
+          });
+        },
+        excluirDespesa: (id) => {
+          if (!isAdmin) {
+            throw new Error('Apenas administradores podem excluir despesas');
+          }
+          const desp = totusDB.getDespesas().find(d => d.id === id);
+          totusDB.excluirDespesa(id);
+          totusDB.registrarLogAuditoria({
+            user_id: currentUser?.id || 'anon',
+            user_nome: currentUser?.nome || 'Usuário',
+            user_email: currentUser?.email || '',
+            acao: 'excluir_despesa',
+            tabela: 'despesas',
+            registro_id: id,
+            detalhes: `Exclusão permanente de despesa: ${desp?.descricao || id} (R$ ${desp?.valor || 0})`,
           });
         },
         salvarCategoriaDespesa: (n, c, i) => {

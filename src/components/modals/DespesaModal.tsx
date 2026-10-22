@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, TrendingDown, Save } from 'lucide-react';
+import { X, TrendingDown, Save, Trash2 } from 'lucide-react';
 import { useTotus } from '../../context/AppContext';
 import { FormaPagamento, Despesa } from '../../types';
 
@@ -9,7 +9,7 @@ interface DespesaModalProps {
 }
 
 export const DespesaModal: React.FC<DespesaModalProps> = ({ despesa, onClose }) => {
-  const { salvarDespesa, categoriasDespesas, salvarCategoriaDespesa } = useTotus();
+  const { salvarDespesa, categoriasDespesas, salvarCategoriaDespesa, excluirDespesa } = useTotus();
 
   const [formData, setFormData] = useState({
     id: despesa?.id || '',
@@ -176,14 +176,32 @@ export const DespesaModal: React.FC<DespesaModalProps> = ({ despesa, onClose }) 
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-            <button type="button" onClick={onClose} className="btn btn-secondary">
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary">
-              <Save size={16} />
-              <span>Salvar Despesa</span>
-            </button>
+          <div style={{ display: 'flex', justifyContent: despesa ? 'space-between' : 'flex-end', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+            {despesa && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`Deseja realmente excluir permanentemente a despesa "${despesa.descricao}"?`)) {
+                    excluirDespesa(despesa.id);
+                    onClose();
+                  }
+                }}
+                className="btn btn-secondary"
+                style={{ color: 'var(--accent-rose)', borderColor: 'rgba(239, 68, 68, 0.3)', gap: '6px' }}
+              >
+                <Trash2 size={16} />
+                <span>Excluir Despesa</span>
+              </button>
+            )}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="button" onClick={onClose} className="btn btn-secondary">
+                Cancelar
+              </button>
+              <button type="submit" className="btn btn-primary">
+                <Save size={16} />
+                <span>Salvar Despesa</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -130,7 +130,11 @@ const MainApp: React.FC = () => {
             </div>
           );
         }
-        return <FinanceiroPage />;
+        return (
+          <FinanceiroPage
+            onEditDespesa={(desp) => setModalDespesa({ open: true, despesa: desp })}
+          />
+        );
       case 'despesas':
         // Rota protegida: Revendedor não visualiza despesas
         if (!isAdmin) {

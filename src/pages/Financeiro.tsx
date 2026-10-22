@@ -11,6 +11,8 @@ import {
   PieChart as PieChartIcon,
   Layers,
   FileSpreadsheet,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -29,9 +31,14 @@ import {
 } from 'recharts';
 import { useTotus } from '../context/AppContext';
 import { formatCurrency, formatDate } from '../lib/utils';
+import { Despesa } from '../types';
 
-export const FinanceiroPage: React.FC = () => {
-  const { kpis, fluxoCaixa, despesas, cobrancas, clientes } = useTotus();
+interface FinanceiroPageProps {
+  onEditDespesa?: (despesa: Despesa) => void;
+}
+
+export const FinanceiroPage: React.FC<FinanceiroPageProps> = ({ onEditDespesa }) => {
+  const { kpis, fluxoCaixa, despesas, cobrancas, clientes, excluirDespesa } = useTotus();
   const [filtroTipoFluxo, setFiltroTipoFluxo] = useState<'todos' | 'entrada' | 'saida'>('todos');
   const [mesSelecionado, setMesSelecionado] = useState<number>(10);
   const [anoSelecionado, setAnoSelecionado] = useState<number>(2026);
@@ -306,44 +313,81 @@ export const FinanceiroPage: React.FC = () => {
                   <th>Forma Pagamento</th>
                   <th>Origem</th>
                   <th style={{ textAlign: 'right' }}>Valor</th>
+                  <th style={{ textAlign: 'center', width: '90px' }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {fluxoFiltrado.map(item => (
-                  <tr key={item.id}>
-                    <td>
-                      <span style={{ fontWeight: 600 }}>{formatDate(item.data_movimento)}</span>
-                    </td>
-                    <td>
-                      <span className={`badge ${item.tipo === 'entrada' ? 'badge-pago' : 'badge-atrasado'}`}>
-                        {item.tipo === 'entrada' ? '+ Entrada' : '- Saída'}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{item.descricao}</div>
-                    </td>
-                    <td>
-                      <span style={{ textTransform: 'uppercase', fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}>
-                        {item.forma_pagamento}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>
-                        {item.origem === 'pagamento_cliente' ? 'Cobrança Cliente' : 'Despesa Paga'}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span
-                        style={{
-                          fontWeight: 800,
-                          color: item.tipo === 'entrada' ? 'var(--accent-emerald)' : 'var(--accent-rose)',
-                        }}
-                      >
-                        {item.tipo === 'entrada' ? '+' : '-'} {formatCurrency(item.valor)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {fluxoFiltrado.map(item => {
+                  const isDespesa = item.origem === 'despesa_paga';
+                  const desp = isDespesa ? despesas.find(d => d.id === item.origem_id) : undefined;
+
+                  return (
+                    <tr key={item.id}>
+                      <td>
+                        <span style={{ fontWeight: 600 }}>{formatDate(item.data_movimento)}</span>
+                      </td>
+                      <td>
+                        <span className={`badge ${item.tipo === 'entrada' ? 'badge-pago' : 'badge-atrasado'}`}>
+                          {item.tipo === 'entrada' ? '+ Entrada' : '- Saída'}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{item.descricao}</div>
+                      </td>
+                      <td>
+                        <span style={{ textTransform: 'uppercase', fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}>
+                          {item.forma_pagamento}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>
+                          {item.origem === 'pagamento_cliente' ? 'Cobrança Cliente' : 'Despesa Paga'}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            color: item.tipo === 'entrada' ? 'var(--accent-emerald)' : 'var(--accent-rose)',
+                          }}
+                        >
+                          {item.tipo === 'entrada' ? '+' : '-'} {formatCurrency(item.valor)}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        {isDespesa ? (
+                          <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'center' }}>
+                            {desp && onEditDespesa && (
+                              <button
+                                className="btn btn-secondary btn-sm btn-icon"
+                                title="Editar despesa"
+                                onClick={() => onEditDespesa(desp)}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                            <button
+                              className="btn btn-secondary btn-sm btn-icon"
+                              title="Excluir despesa"
+                              style={{ color: 'var(--accent-rose)' }}
+                              onClick={() => {
+                                const targetId = item.origem_id || desp?.id || item.id;
+                                const nome = desp ? desp.descricao : item.descricao;
+                                if (window.confirm(`Tem certeza que deseja excluir a despesa "${nome}"? Ela será removida permanentemente do Livro Caixa.`)) {
+                                  excluirDespesa(targetId);
+                                }
+                              }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--text-subtle)', fontSize: '0.8rem' }}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
