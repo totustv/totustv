@@ -203,8 +203,6 @@ const MainApp: React.FC = () => {
         onNavigate={setCurrentPage}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        aniversariantesCount={kpis.aniversariantesMes.length}
-        promessasCount={kpis.prometeramPagar}
       />
 
       <div className="main-content">
@@ -233,8 +231,6 @@ const MainApp: React.FC = () => {
         currentPage={currentPage}
         onNavigate={setCurrentPage}
         onOpenMenu={() => setSidebarOpen(true)}
-        promessasCount={kpis.prometeramPagar}
-        aniversariantesCount={kpis.aniversariantesMes.length}
       />
 
       {/* Modais Globais Reativos */}

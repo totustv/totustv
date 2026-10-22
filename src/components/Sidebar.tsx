@@ -55,7 +55,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'cobrancas',
       label: 'Vencimentos',
       icon: CreditCard,
-      badge: promessasCount > 0 ? promessasCount : undefined,
       visible: true,
     },
     {
@@ -68,7 +67,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'bonus',
       label: 'Bônus',
       icon: Gift,
-      badge: aniversariantesCount > 0 ? `${aniversariantesCount} Aniv.` : undefined,
       visible: true,
     },
     {
@@ -235,20 +233,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <Icon size={18} color={active ? 'var(--accent-primary)' : 'currentColor'} />
                   <span>{item.label}</span>
                 </div>
-                {item.badge && (
-                  <span
-                    style={{
-                      background: 'var(--accent-primary)',
-                      color: '#ffffff',
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      padding: '2px 7px',
-                      borderRadius: 'var(--radius-full)',
-                    }}
-                  >
-                    {item.badge}
-                  </span>
-                )}
               </button>
             );
           })}

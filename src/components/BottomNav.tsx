@@ -23,8 +23,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const items = [
     { id: 'dashboard', label: 'Início', icon: LayoutDashboard },
     { id: 'clientes', label: 'Clientes', icon: Users },
-    { id: 'cobrancas', label: 'Cobranças', icon: CreditCard, badge: promessasCount },
-    { id: 'bonus', label: 'Bônus', icon: Gift, badge: aniversariantesCount },
+    { id: 'cobrancas', label: 'Cobranças', icon: CreditCard },
+    { id: 'bonus', label: 'Bônus', icon: Gift },
   ];
 
   const mainIds = items.map(i => i.id);
@@ -47,7 +47,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           >
             <span className="bottom-nav-icon">
               <Icon size={21} strokeWidth={active ? 2.4 : 2} />
-              {!!item.badge && item.badge > 0 && <span className="bottom-nav-badge">{item.badge}</span>}
             </span>
             <span className="bottom-nav-label">{item.label}</span>
           </button>

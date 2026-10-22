@@ -7,6 +7,7 @@ import {
   Plus,
   Bell,
   CheckCircle2,
+  CheckCheck,
   Tv,
   MessageCircle,
   Cake,
@@ -48,6 +49,18 @@ interface HeaderProps {
   onOpenPagamentoModal?: (cobrancaId: string) => void;
 }
 
+const STORAGE_KEY_READ_NOTIFS = 'totustv_read_notifs_v1';
+const STORAGE_KEY_DISMISSED_NOTIFS = 'totustv_dismissed_notifs_v1';
+
+const getStoredArray = (key: string): string[] => {
+  try {
+    const val = localStorage.getItem(key);
+    return val ? JSON.parse(val) : [];
+  } catch {
+    return [];
+  }
+};
+
 export const Header: React.FC<HeaderProps> = ({
   onToggleSidebar,
   onOpenNovoCliente,
@@ -61,6 +74,32 @@ export const Header: React.FC<HeaderProps> = ({
   const [isDark, setIsDark] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState<'tudo' | 'aniversarios' | 'cobrancas' | 'promessas'>('tudo');
+
+  // Gerenciamento de alertas lidos e dispensados
+  const [readNotifIds, setReadNotifIds] = useState<string[]>(() => getStoredArray(STORAGE_KEY_READ_NOTIFS));
+  const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>(() => getStoredArray(STORAGE_KEY_DISMISSED_NOTIFS));
+
+  const saveReadNotifs = (ids: string[]) => {
+    setReadNotifIds(ids);
+    try {
+      localStorage.setItem(STORAGE_KEY_READ_NOTIFS, JSON.stringify(ids));
+    } catch {}
+  };
+
+  const saveDismissedNotifs = (ids: string[]) => {
+    setDismissedNotifIds(ids);
+    try {
+      localStorage.setItem(STORAGE_KEY_DISMISSED_NOTIFS, JSON.stringify(ids));
+    } catch {}
+  };
+
+  // IDs únicos para cada notificação
+  const getAnivHojeId = (cliId: string) => `niver-hoje-${cliId}`;
+  const getPromessaId = (cobId: string) => `promessa-${cobId}`;
+  const getCobHojeId = (cobId: string) => `cob-hoje-${cobId}`;
+  const getCobAtrasadaId = (cobId: string) => `cob-atrasada-${cobId}`;
+  const getCobAmanhaId = (cobId: string) => `cob-amanha-${cobId}`;
+  const getAnivMesId = (cliId: string) => `niver-mes-${cliId}`;
 
   const toggleTheme = () => {
     const nextDark = !isDark;
@@ -114,15 +153,115 @@ export const Header: React.FC<HeaderProps> = ({
     return cobrancas.filter(c => c.status === 'prometeu_pagar');
   }, [cobrancas]);
 
-  // 4. VENCIMENTOS DO DIA ATUAL EM LOTE (Ex: clientes cujo dia_vencimento coincide com o dia atual do mês)
+  // 4. VENCIMENTOS DO DIA ATUAL EM LOTE
   const diaHojeNum = new Date().getDate();
   const clientesLoteHoje = useMemo(() => {
     return clientes.filter(c => c.status === 'ativo' && c.dia_vencimento === diaHojeNum);
   }, [clientes, diaHojeNum]);
 
-  // Contadores
-  const urgentCount = aniversariantesHoje.length + cobrancasHoje.length + cobrancasAtrasadas.length + promessasHoje.length;
-  const totalCount = urgentCount + cobrancasAmanha.length + (aniversariantesMes.length - aniversariantesHoje.length);
+  // Listas visíveis (não dispensadas pelo usuário)
+  const visiveisAniversariantesHoje = useMemo(() => {
+    return aniversariantesHoje.filter(c => !dismissedNotifIds.includes(getAnivHojeId(c.id)));
+  }, [aniversariantesHoje, dismissedNotifIds]);
+
+  const visiveisPromessasHoje = useMemo(() => {
+    return promessasHoje.filter(cob => !dismissedNotifIds.includes(getPromessaId(cob.id)));
+  }, [promessasHoje, dismissedNotifIds]);
+
+  const visiveisCobrancasHoje = useMemo(() => {
+    return cobrancasHoje.filter(cob => !dismissedNotifIds.includes(getCobHojeId(cob.id)));
+  }, [cobrancasHoje, dismissedNotifIds]);
+
+  const visiveisCobrancasAtrasadas = useMemo(() => {
+    return cobrancasAtrasadas.filter(cob => !dismissedNotifIds.includes(getCobAtrasadaId(cob.id)));
+  }, [cobrancasAtrasadas, dismissedNotifIds]);
+
+  const visiveisCobrancasAmanha = useMemo(() => {
+    return cobrancasAmanha.filter(cob => !dismissedNotifIds.includes(getCobAmanhaId(cob.id)));
+  }, [cobrancasAmanha, dismissedNotifIds]);
+
+  const visiveisAniversariantesMes = useMemo(() => {
+    return aniversariantesMes
+      .filter(c => !isBirthdayToday(c.data_nascimento))
+      .filter(c => !dismissedNotifIds.includes(getAnivMesId(c.id)));
+  }, [aniversariantesMes, dismissedNotifIds]);
+
+  // Contagens dos itens visíveis no dropdown
+  const visibleUrgentCount =
+    visiveisAniversariantesHoje.length +
+    visiveisPromessasHoje.length +
+    visiveisCobrancasHoje.length +
+    visiveisCobrancasAtrasadas.length;
+
+  const visibleTotalCount =
+    visibleUrgentCount +
+    visiveisCobrancasAmanha.length +
+    visiveisAniversariantesMes.length;
+
+  // Todos os alertas atualmente ativos
+  const todosAlertasVisiveis = useMemo(() => {
+    const list: { id: string; isUrgent: boolean }[] = [];
+    visiveisAniversariantesHoje.forEach(c => list.push({ id: getAnivHojeId(c.id), isUrgent: true }));
+    visiveisPromessasHoje.forEach(c => list.push({ id: getPromessaId(c.id), isUrgent: true }));
+    visiveisCobrancasHoje.forEach(c => list.push({ id: getCobHojeId(c.id), isUrgent: true }));
+    visiveisCobrancasAtrasadas.forEach(c => list.push({ id: getCobAtrasadaId(c.id), isUrgent: true }));
+    visiveisCobrancasAmanha.forEach(c => list.push({ id: getCobAmanhaId(c.id), isUrgent: false }));
+    visiveisAniversariantesMes.forEach(c => list.push({ id: getAnivMesId(c.id), isUrgent: false }));
+    return list;
+  }, [
+    visiveisAniversariantesHoje,
+    visiveisPromessasHoje,
+    visiveisCobrancasHoje,
+    visiveisCobrancasAtrasadas,
+    visiveisCobrancasAmanha,
+    visiveisAniversariantesMes,
+  ]);
+
+  // Alertas que ainda NÃO foram lidos (controlam o badge no sino)
+  const alertasNaoLidos = useMemo(() => {
+    return todosAlertasVisiveis.filter(a => !readNotifIds.includes(a.id));
+  }, [todosAlertasVisiveis, readNotifIds]);
+
+  const unreadCount = alertasNaoLidos.length;
+  const unreadUrgentCount = alertasNaoLidos.filter(a => a.isUrgent).length;
+
+  // Marcar todas as notificações atuais como lidas
+  const handleMarcarTodasComoLidas = () => {
+    const allIds = todosAlertasVisiveis.map(a => a.id);
+    const updated = Array.from(new Set([...readNotifIds, ...allIds]));
+    saveReadNotifs(updated);
+  };
+
+  // Dispensar um alerta individual (remove da lista e marca como lido)
+  const handleDispensarAlerta = (alertId: string) => {
+    const updatedDismissed = Array.from(new Set([...dismissedNotifIds, alertId]));
+    saveDismissedNotifs(updatedDismissed);
+    const updatedRead = Array.from(new Set([...readNotifIds, alertId]));
+    saveReadNotifs(updatedRead);
+  };
+
+  // Limpar todos os alertas da lista
+  const handleLimparTodosAlertas = () => {
+    const allIds = todosAlertasVisiveis.map(a => a.id);
+    const updatedDismissed = Array.from(new Set([...dismissedNotifIds, ...allIds]));
+    saveDismissedNotifs(updatedDismissed);
+    const updatedRead = Array.from(new Set([...readNotifIds, ...allIds]));
+    saveReadNotifs(updatedRead);
+  };
+
+  // Restaurar alertas dispensados
+  const handleRestaurarAlertas = () => {
+    saveDismissedNotifs([]);
+  };
+
+  // Ao clicar no sino: abre o dropdown e marca como lidas (o alerta vermelho no sino some!)
+  const handleToggleNotificacoes = () => {
+    const nextState = !showNotifications;
+    setShowNotifications(nextState);
+    if (nextState) {
+      handleMarcarTodasComoLidas();
+    }
+  };
 
   // Abertura direta do WhatsApp com mensagem pronta
   const handleEnviarWhatsApp = (url: string, clienteId?: string, motivo: string = 'Alerta') => {
@@ -135,6 +274,14 @@ export const Header: React.FC<HeaderProps> = ({
       });
     }
     window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  // Ação de WhatsApp com dispensa automática do alerta
+  const handleAcaoWhatsApp = (url: string, clienteId?: string, motivo: string = 'Alerta', alertId?: string) => {
+    if (alertId) {
+      handleDispensarAlerta(alertId);
+    }
+    handleEnviarWhatsApp(url, clienteId, motivo);
   };
 
   // Gerador de mensagem de aniversário
@@ -218,14 +365,14 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Central de Notificações Aprimorada */}
           <div style={{ position: 'relative' }}>
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={handleToggleNotificacoes}
               className="btn btn-secondary btn-icon"
               style={{ position: 'relative' }}
               title="Central de Avisos e Notificações"
               id="btn-notificacoes"
             >
               <Bell size={18} />
-              {totalCount > 0 && (
+              {unreadCount > 0 && (
                 <span
                   style={{
                     position: 'absolute',
@@ -234,7 +381,7 @@ export const Header: React.FC<HeaderProps> = ({
                     minWidth: '18px',
                     height: '18px',
                     padding: '0 4px',
-                    backgroundColor: urgentCount > 0 ? '#ef4444' : '#f59e0b',
+                    backgroundColor: unreadUrgentCount > 0 ? '#ef4444' : '#f59e0b',
                     color: '#ffffff',
                     borderRadius: '10px',
                     fontSize: '0.65rem',
@@ -243,10 +390,11 @@ export const Header: React.FC<HeaderProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     border: '2px solid var(--bg-secondary)',
-                    boxShadow: urgentCount > 0 ? '0 0 10px rgba(239, 68, 68, 0.6)' : 'none',
+                    boxShadow: unreadUrgentCount > 0 ? '0 0 10px rgba(239, 68, 68, 0.6)' : 'none',
+                    animation: 'popIn 0.2s ease',
                   }}
                 >
-                  {totalCount > 99 ? '99+' : totalCount}
+                  {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
             </button>
@@ -264,8 +412,8 @@ export const Header: React.FC<HeaderProps> = ({
                             width: '28px',
                             height: '28px',
                             borderRadius: '8px',
-                            background: urgentCount > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                            color: urgentCount > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)',
+                            background: visibleUrgentCount > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                            color: visibleUrgentCount > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -278,17 +426,41 @@ export const Header: React.FC<HeaderProps> = ({
                             Central de Notificações
                           </div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            {urgentCount > 0 ? `${urgentCount} pendência(s) prioritária(s)` : 'Tudo sob controle'}
+                            {visibleTotalCount === 0
+                              ? 'Tudo sob controle'
+                              : visibleUrgentCount > 0
+                              ? `${visibleUrgentCount} pendência(s) prioritária(s)`
+                              : 'Tudo sob controle'}
                           </div>
                         </div>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {visibleTotalCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleLimparTodosAlertas}
+                            className="btn btn-secondary"
+                            style={{
+                              fontSize: '0.72rem',
+                              padding: '3px 8px',
+                              height: '26px',
+                              gap: '4px',
+                              borderRadius: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                            }}
+                            title="Limpar todos os alertas da lista"
+                          >
+                            <CheckCheck size={13} color="var(--accent-emerald)" />
+                            <span>Limpar</span>
+                          </button>
+                        )}
                         <span
-                          className={`badge ${urgentCount > 0 ? 'badge-atrasado' : 'badge-em-dia'}`}
+                          className={`badge ${visibleUrgentCount > 0 ? 'badge-atrasado' : 'badge-em-dia'}`}
                           style={{ fontSize: '0.75rem', fontWeight: 700 }}
                         >
-                          {totalCount} alerta(s)
+                          {visibleTotalCount} alerta(s)
                         </span>
                         <button
                           type="button"
@@ -338,7 +510,7 @@ export const Header: React.FC<HeaderProps> = ({
                           transition: 'all 0.15s ease',
                         }}
                       >
-                        Tudo ({totalCount})
+                        Tudo ({visibleTotalCount})
                       </button>
 
                       <button
@@ -364,7 +536,7 @@ export const Header: React.FC<HeaderProps> = ({
                         }}
                       >
                         <span>🎂 Niver</span>
-                        <span>({aniversariantesMes.length})</span>
+                        <span>({visiveisAniversariantesMes.length + visiveisAniversariantesHoje.length})</span>
                       </button>
 
                       <button
@@ -390,7 +562,7 @@ export const Header: React.FC<HeaderProps> = ({
                         }}
                       >
                         <span>🚨 Cobranças</span>
-                        <span>({cobrancasHoje.length + cobrancasAtrasadas.length})</span>
+                        <span>({visiveisCobrancasHoje.length + visiveisCobrancasAtrasadas.length})</span>
                       </button>
 
                       <button
@@ -416,7 +588,7 @@ export const Header: React.FC<HeaderProps> = ({
                         }}
                       >
                         <span>🤝 Promessas</span>
-                        <span>({promessasHoje.length})</span>
+                        <span>({visiveisPromessasHoje.length})</span>
                       </button>
                     </div>
                   </div>
@@ -424,73 +596,95 @@ export const Header: React.FC<HeaderProps> = ({
                   {/* Corpo Rolável dos Alertas */}
                   <div className="notif-body">
                     {/* 1. SEÇÃO DE ANIVERSARIANTES DE HOJE (Prioridade Máxima) */}
-                    {(abaAtiva === 'tudo' || abaAtiva === 'aniversarios') && aniversariantesHoje.length > 0 && (
+                    {(abaAtiva === 'tudo' || abaAtiva === 'aniversarios') && visiveisAniversariantesHoje.length > 0 && (
                       <div>
                         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Sparkles size={14} />
-                          <span>Aniversariante(s) de Hoje ({aniversariantesHoje.length})</span>
+                          <span>Aniversariante(s) de Hoje ({visiveisAniversariantesHoje.length})</span>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {aniversariantesHoje.map(cli => (
-                            <div key={`niver-hoje-${cli.id}`} className="notif-item notif-bday-today">
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <div style={{ fontSize: '1.4rem' }}>🎂</div>
-                                  <div>
-                                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)' }}>
-                                      {cli.nome}
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                      {formatPhone(cli.whatsapp)} • Mensalidade: <strong>{formatCurrency(cli.valor_mensalidade)}</strong> (Venc. dia {cli.dia_vencimento})
+                          {visiveisAniversariantesHoje.map(cli => {
+                            const alertId = getAnivHojeId(cli.id);
+                            return (
+                              <div key={alertId} className="notif-item notif-bday-today">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ fontSize: '1.4rem' }}>🎂</div>
+                                    <div>
+                                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)' }}>
+                                        {cli.nome}
+                                      </div>
+                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        {formatPhone(cli.whatsapp)} • Mensalidade: <strong>{formatCurrency(cli.valor_mensalidade)}</strong> (Venc. dia {cli.dia_vencimento})
+                                      </div>
                                     </div>
                                   </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span className="badge" style={{ backgroundColor: '#f59e0b', color: '#000', fontWeight: 800, fontSize: '0.7rem' }}>
+                                      🎉 É HOJE!
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDispensarAlerta(alertId)}
+                                      title="Dispensar este alerta"
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--text-muted)',
+                                        cursor: 'pointer',
+                                        padding: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                      }}
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
                                 </div>
-                                <span className="badge" style={{ backgroundColor: '#f59e0b', color: '#000', fontWeight: 800, fontSize: '0.7rem' }}>
-                                  🎉 É HOJE!
-                                </span>
-                              </div>
 
-                              <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => handleEnviarWhatsApp(getUrlParabens(cli), cli.id, 'Parabéns Aniversário')}
-                                  className="btn btn-primary"
-                                  style={{
-                                    flex: 1,
-                                    height: '34px',
-                                    backgroundColor: '#25d366',
-                                    borderColor: '#25d366',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    padding: '0 10px',
-                                    justifyContent: 'center',
-                                    boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
-                                  }}
-                                >
-                                  <MessageCircle size={15} />
-                                  <span>Enviar Parabéns (WhatsApp)</span>
-                                </button>
+                                <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAcaoWhatsApp(getUrlParabens(cli), cli.id, 'Parabéns Aniversário', alertId)}
+                                    className="btn btn-primary"
+                                    style={{
+                                      flex: 1,
+                                      height: '34px',
+                                      backgroundColor: '#25d366',
+                                      borderColor: '#25d366',
+                                      fontSize: '0.8rem',
+                                      fontWeight: 700,
+                                      padding: '0 10px',
+                                      justifyContent: 'center',
+                                      boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
+                                    }}
+                                  >
+                                    <MessageCircle size={15} />
+                                    <span>Enviar Parabéns (WhatsApp)</span>
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
 
                     {/* 2. SEÇÃO DE PROMESSAS DE PAGAMENTO PARA HOJE */}
-                    {(abaAtiva === 'tudo' || abaAtiva === 'promessas') && promessasHoje.length > 0 && (
+                    {(abaAtiva === 'tudo' || abaAtiva === 'promessas') && visiveisPromessasHoje.length > 0 && (
                       <div>
                         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Handshake size={14} />
-                          <span>Promessas para Hoje ({promessasHoje.length})</span>
+                          <span>Promessas para Hoje ({visiveisPromessasHoje.length})</span>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {promessasHoje.map(cob => {
+                          {visiveisPromessasHoje.map(cob => {
                             const cli = clientesMap.get(cob.cliente_id);
+                            const alertId = getPromessaId(cob.id);
                             return (
-                              <div key={`promessa-${cob.id}`} className="notif-item notif-card-promise">
+                              <div key={alertId} className="notif-item notif-card-promise">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                   <div>
                                     <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-main)' }}>
@@ -500,16 +694,34 @@ export const Header: React.FC<HeaderProps> = ({
                                       Prometeu pagar hoje • Valor: <strong style={{ color: 'var(--accent-emerald)' }}>{formatCurrency(cob.valor)}</strong>
                                     </div>
                                   </div>
-                                  <span className="badge badge-pendente" style={{ fontSize: '0.7rem' }}>
-                                    Promessa Hoje
-                                  </span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span className="badge badge-pendente" style={{ fontSize: '0.7rem' }}>
+                                      Promessa Hoje
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDispensarAlerta(alertId)}
+                                      title="Dispensar este alerta"
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--text-muted)',
+                                        cursor: 'pointer',
+                                        padding: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                      }}
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
                                   {cli && (
                                     <button
                                       type="button"
-                                      onClick={() => handleEnviarWhatsApp(getUrlPromessa(cli, cob), cli.id, 'Confirmação de Promessa')}
+                                      onClick={() => handleAcaoWhatsApp(getUrlPromessa(cli, cob), cli.id, 'Confirmação de Promessa', alertId)}
                                       className="btn btn-secondary"
                                       style={{ flex: 1, height: '30px', fontSize: '0.75rem', color: '#25d366', fontWeight: 600, padding: '0 8px', justifyContent: 'center' }}
                                     >
@@ -521,6 +733,7 @@ export const Header: React.FC<HeaderProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => {
+                                        handleDispensarAlerta(alertId);
                                         setShowNotifications(false);
                                         onOpenPagamentoModal(cob.id);
                                       }}
@@ -539,18 +752,19 @@ export const Header: React.FC<HeaderProps> = ({
                     )}
 
                     {/* 3. SEÇÃO DE COBRANÇAS VENCENDO HOJE */}
-                    {(abaAtiva === 'tudo' || abaAtiva === 'cobrancas') && cobrancasHoje.length > 0 && (
+                    {(abaAtiva === 'tudo' || abaAtiva === 'cobrancas') && visiveisCobrancasHoje.length > 0 && (
                       <div>
                         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <AlertCircle size={14} />
-                          <span>Vencem Hoje ({cobrancasHoje.length})</span>
+                          <span>Vencem Hoje ({visiveisCobrancasHoje.length})</span>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {cobrancasHoje.map(cob => {
+                          {visiveisCobrancasHoje.map(cob => {
                             const cli = clientesMap.get(cob.cliente_id);
+                            const alertId = getCobHojeId(cob.id);
                             return (
-                              <div key={`vence-hoje-${cob.id}`} className="notif-item notif-card-today">
+                              <div key={alertId} className="notif-item notif-card-today">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                   <div>
                                     <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-main)' }}>
@@ -560,16 +774,34 @@ export const Header: React.FC<HeaderProps> = ({
                                       {cli ? formatPhone(cli.whatsapp) : ''} • Valor: <strong style={{ color: 'var(--text-main)' }}>{formatCurrency(cob.valor)}</strong>
                                     </div>
                                   </div>
-                                  <span className="badge badge-pendente" style={{ fontSize: '0.7rem' }}>
-                                    Vence Hoje
-                                  </span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span className="badge badge-pendente" style={{ fontSize: '0.7rem' }}>
+                                      Vence Hoje
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDispensarAlerta(alertId)}
+                                      title="Dispensar este alerta"
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--text-muted)',
+                                        cursor: 'pointer',
+                                        padding: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                      }}
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
                                   {cli && (
                                     <button
                                       type="button"
-                                      onClick={() => handleEnviarWhatsApp(getUrlCobrancaHoje(cli, cob), cli.id, 'Lembrete Vencimento Hoje')}
+                                      onClick={() => handleAcaoWhatsApp(getUrlCobrancaHoje(cli, cob), cli.id, 'Lembrete Vencimento Hoje', alertId)}
                                       className="btn btn-secondary"
                                       style={{ flex: 1, height: '30px', fontSize: '0.75rem', color: '#25d366', fontWeight: 600, padding: '0 8px', justifyContent: 'center' }}
                                     >
@@ -581,6 +813,7 @@ export const Header: React.FC<HeaderProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => {
+                                        handleDispensarAlerta(alertId);
                                         setShowNotifications(false);
                                         onOpenPagamentoModal(cob.id);
                                       }}
@@ -599,19 +832,20 @@ export const Header: React.FC<HeaderProps> = ({
                     )}
 
                     {/* 4. SEÇÃO DE COBRANÇAS ATRASADAS / PENDENTES */}
-                    {(abaAtiva === 'tudo' || abaAtiva === 'cobrancas') && cobrancasAtrasadas.length > 0 && (
+                    {(abaAtiva === 'tudo' || abaAtiva === 'cobrancas') && visiveisCobrancasAtrasadas.length > 0 && (
                       <div>
                         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-rose)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Clock size={14} />
-                          <span>Cobranças Atrasadas ({cobrancasAtrasadas.length})</span>
+                          <span>Cobranças Atrasadas ({visiveisCobrancasAtrasadas.length})</span>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {cobrancasAtrasadas.map(cob => {
+                          {visiveisCobrancasAtrasadas.map(cob => {
                             const cli = clientesMap.get(cob.cliente_id);
                             const diasAtraso = getOverdueDays(cob.data_vencimento);
+                            const alertId = getCobAtrasadaId(cob.id);
                             return (
-                              <div key={`atrasada-${cob.id}`} className="notif-item notif-card-overdue">
+                              <div key={alertId} className="notif-item notif-card-overdue">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                   <div>
                                     <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-main)' }}>
@@ -621,16 +855,34 @@ export const Header: React.FC<HeaderProps> = ({
                                       Venceu {formatDate(cob.data_vencimento)} • Valor: <strong style={{ color: 'var(--accent-rose)' }}>{formatCurrency(cob.valor)}</strong>
                                     </div>
                                   </div>
-                                  <span className="badge badge-atrasado" style={{ fontSize: '0.7rem' }}>
-                                    {diasAtraso === 1 ? '1 dia atrasado' : `${diasAtraso} dias atrasado`}
-                                  </span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span className="badge badge-atrasado" style={{ fontSize: '0.7rem' }}>
+                                      {diasAtraso === 1 ? '1 dia atrasado' : `${diasAtraso} dias atrasado`}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDispensarAlerta(alertId)}
+                                      title="Dispensar este alerta"
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--text-muted)',
+                                        cursor: 'pointer',
+                                        padding: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                      }}
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
                                   {cli && (
                                     <button
                                       type="button"
-                                      onClick={() => handleEnviarWhatsApp(getUrlCobrancaAtrasada(cli, cob), cli.id, 'Cobrança Fatura Atrasada')}
+                                      onClick={() => handleAcaoWhatsApp(getUrlCobrancaAtrasada(cli, cob), cli.id, 'Cobrança Fatura Atrasada', alertId)}
                                       className="btn btn-secondary"
                                       style={{ flex: 1, height: '30px', fontSize: '0.75rem', color: '#25d366', fontWeight: 600, padding: '0 8px', justifyContent: 'center' }}
                                     >
@@ -642,6 +894,7 @@ export const Header: React.FC<HeaderProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => {
+                                        handleDispensarAlerta(alertId);
                                         setShowNotifications(false);
                                         onOpenPagamentoModal(cob.id);
                                       }}
@@ -660,22 +913,23 @@ export const Header: React.FC<HeaderProps> = ({
                     )}
 
                     {/* 5. SEÇÃO DE ANIVERSARIANTES DO MÊS (Lista Completa) */}
-                    {(abaAtiva === 'tudo' || abaAtiva === 'aniversarios') && aniversariantesMes.length > 0 && (
+                    {(abaAtiva === 'tudo' || abaAtiva === 'aniversarios') && visiveisAniversariantesMes.length > 0 && (
                       <div>
                         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ec4899', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Cake size={14} />
-                          <span>Aniversariantes do Mês Atual ({aniversariantesMes.length})</span>
+                          <span>Aniversariantes do Mês Atual ({visiveisAniversariantesMes.length})</span>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {aniversariantesMes.map(cli => {
+                          {visiveisAniversariantesMes.map(cli => {
                             const diaNiver = cli.data_nascimento?.split('-')[2];
                             const diasFaltando = getDaysUntilBirthday(cli.data_nascimento);
                             const ehHoje = isBirthdayToday(cli.data_nascimento);
+                            const alertId = getAnivMesId(cli.id);
 
                             return (
                               <div
-                                key={`niver-mes-${cli.id}`}
+                                key={alertId}
                                 className={`notif-item ${ehHoje ? 'notif-bday-today' : ''}`}
                                 style={{
                                   borderLeft: ehHoje ? '3px solid #f59e0b' : '3px solid #ec4899',
@@ -692,7 +946,7 @@ export const Header: React.FC<HeaderProps> = ({
                                     </div>
                                   </div>
 
-                                  <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                     {ehHoje ? (
                                       <span className="badge" style={{ backgroundColor: '#f59e0b', color: '#000', fontWeight: 800, fontSize: '0.7rem' }}>
                                         HOJE!
@@ -706,13 +960,29 @@ export const Header: React.FC<HeaderProps> = ({
                                         Já passou (Dia {diaNiver})
                                       </span>
                                     )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDispensarAlerta(alertId)}
+                                      title="Dispensar este alerta"
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--text-muted)',
+                                        cursor: 'pointer',
+                                        padding: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                      }}
+                                    >
+                                      <X size={14} />
+                                    </button>
                                   </div>
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
                                   <button
                                     type="button"
-                                    onClick={() => handleEnviarWhatsApp(getUrlParabens(cli), cli.id, 'Parabéns Aniversariante')}
+                                    onClick={() => handleAcaoWhatsApp(getUrlParabens(cli), cli.id, 'Parabéns Aniversariante', alertId)}
                                     className="btn btn-secondary"
                                     style={{ flex: 1, height: '30px', fontSize: '0.75rem', color: '#25d366', fontWeight: 600, padding: '0 8px', justifyContent: 'center' }}
                                   >
@@ -728,18 +998,19 @@ export const Header: React.FC<HeaderProps> = ({
                     )}
 
                     {/* 6. LEMBRETE PREVENTIVO: VENCEM AMANHÃ */}
-                    {(abaAtiva === 'tudo' || abaAtiva === 'cobrancas') && cobrancasAmanha.length > 0 && (
+                    {(abaAtiva === 'tudo' || abaAtiva === 'cobrancas') && visiveisCobrancasAmanha.length > 0 && (
                       <div>
                         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Clock size={14} />
-                          <span>Vencem Amanhã - Lembrete Preventivo ({cobrancasAmanha.length})</span>
+                          <span>Vencem Amanhã - Lembrete Preventivo ({visiveisCobrancasAmanha.length})</span>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {cobrancasAmanha.map(cob => {
+                          {visiveisCobrancasAmanha.map(cob => {
                             const cli = clientesMap.get(cob.cliente_id);
+                            const alertId = getCobAmanhaId(cob.id);
                             return (
-                              <div key={`vence-amanha-${cob.id}`} className="notif-item" style={{ borderLeft: '3px solid #8b5cf6' }}>
+                              <div key={alertId} className="notif-item" style={{ borderLeft: '3px solid #8b5cf6' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                   <div>
                                     <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-main)' }}>
@@ -749,15 +1020,33 @@ export const Header: React.FC<HeaderProps> = ({
                                       Vence amanhã ({formatDate(cob.data_vencimento)}) • {formatCurrency(cob.valor)}
                                     </div>
                                   </div>
-                                  <span className="badge" style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', fontSize: '0.7rem' }}>
-                                    Amanhã
-                                  </span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span className="badge" style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', fontSize: '0.7rem' }}>
+                                      Amanhã
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDispensarAlerta(alertId)}
+                                      title="Dispensar este alerta"
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--text-muted)',
+                                        cursor: 'pointer',
+                                        padding: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                      }}
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
                                 </div>
 
                                 {cli && (
                                   <button
                                     type="button"
-                                    onClick={() => handleEnviarWhatsApp(getUrlLembreteAmanha(cli, cob), cli.id, 'Lembrete Vencimento Amanhã')}
+                                    onClick={() => handleAcaoWhatsApp(getUrlLembreteAmanha(cli, cob), cli.id, 'Lembrete Vencimento Amanhã', alertId)}
                                     className="btn btn-secondary"
                                     style={{ height: '30px', fontSize: '0.75rem', color: '#25d366', fontWeight: 600, padding: '0 8px', justifyContent: 'center', marginTop: '2px' }}
                                   >
@@ -812,16 +1101,46 @@ export const Header: React.FC<HeaderProps> = ({
                       </div>
                     )}
 
-                    {/* Estado Vazio quando não há notificações na aba */}
-                    {totalCount === 0 && (
+                    {/* Botão sutil de restauração quando há alertas dispensados */}
+                    {dismissedNotifIds.length > 0 && visibleTotalCount > 0 && (
+                      <div style={{ textAlign: 'center', padding: '4px 0' }}>
+                        <button
+                          type="button"
+                          onClick={handleRestaurarAlertas}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            fontSize: '0.72rem',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          Restaurar {dismissedNotifIds.length} alerta(s) limpos
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Estado Vazio quando não há notificações visíveis */}
+                    {visibleTotalCount === 0 && (
                       <div style={{ textAlign: 'center', color: 'var(--text-subtle)', padding: '28px 12px' }}>
                         <CheckCircle2 size={36} color="var(--accent-emerald)" style={{ margin: '0 auto 8px' }} />
                         <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.95rem' }}>
                           Tudo em dia para hoje!
                         </div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                          Nenhuma cobrança atrasada, vencimento urgente ou aniversário pendente.
+                          Todos os alertas foram lidos e concluídos.
                         </div>
+                        {dismissedNotifIds.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleRestaurarAlertas}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.75rem', marginTop: '12px', padding: '4px 10px', height: '28px' }}
+                          >
+                            Restaurar {dismissedNotifIds.length} alerta(s) limpos
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

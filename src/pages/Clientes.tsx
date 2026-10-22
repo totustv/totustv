@@ -39,20 +39,12 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
   onOpenHistoricoModal,
   filtroGlobal = '',
 }) => {
-  const { clientes, cobrancas, toggleStatusCliente, bonus, promessas, usuarios } = useTotus();
+  const { clientes, cobrancas, toggleStatusCliente, bonus, promessas } = useTotus();
   const { isAdmin, currentUser } = useAuth();
   const [busca, setBusca] = useState(filtroGlobal);
-  const [filtroRevendedor, setFiltroRevendedor] = useState<string>('todos');
   const [filtroRapido, setFiltroRapido] = useState<
     'todos' | 'ativos' | 'inativos' | 'com_indicacao' | 'diretos'
   >('todos');
-
-  const getPrimeiroNome = (resellerId?: string) => {
-    if (!resellerId) return '';
-    const u = usuarios.find(user => user.id === resellerId);
-    if (!u || !u.nome) return 'Revendedor';
-    return u.nome.trim().split(' ')[0];
-  };
 
   // Relacionar cada cliente com a sua cobrança mais recente/ativa
   const clientesComDados = useMemo(() => {
@@ -96,16 +88,7 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
         if (!matchNome && !matchTel && !matchCidade && !matchEstado && !matchPais && !matchPadrinho) return false;
       }
 
-      // 2. Filtro por Revendedor (Admin)
-      if (isAdmin && filtroRevendedor !== 'todos') {
-        if (filtroRevendedor === 'sem_revendedor') {
-          if (cli.reseller_id) return false;
-        } else if (cli.reseller_id !== filtroRevendedor) {
-          return false;
-        }
-      }
-
-      // 3. Filtro Rápido
+      // 2. Filtro Rápido
       if (filtroRapido === 'ativos') return cli.status === 'ativo';
       if (filtroRapido === 'inativos') return cli.status === 'inativo';
       if (filtroRapido === 'com_indicacao') return Boolean(cli.indicado_por);
@@ -113,7 +96,7 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
 
       return true;
     });
-  }, [clientesComDados, busca, filtroRapido, filtroRevendedor, isAdmin, clientes]);
+  }, [clientesComDados, busca, filtroRapido, clientes]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -161,26 +144,6 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
             <option value="com_indicacao">Com Indicação (Padrinho)</option>
             <option value="diretos">Cadastros Diretos</option>
           </select>
-
-          {isAdmin && (
-            <select
-              className="form-control"
-              value={filtroRevendedor}
-              onChange={e => setFiltroRevendedor(e.target.value)}
-              style={{ width: '220px' }}
-              title="Filtrar por revendedor responsável"
-            >
-              <option value="todos">Todos os Revendedores</option>
-              <option value="sem_revendedor">Direto (Sem Revendedor)</option>
-              {usuarios
-                .filter(u => u.role === 'reseller')
-                .map(u => (
-                  <option key={u.id} value={u.id}>
-                    {u.nome}
-                  </option>
-                ))}
-            </select>
-          )}
 
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
             Exibindo <strong>{clientesFiltrados.length}</strong> de {clientes.length} clientes
