@@ -35,6 +35,22 @@ export function formatDate(dateString: string | undefined | null): string {
 }
 
 /**
+ * Formata aniversário apenas como Dia e Mês (DD/MM)
+ */
+export function formatAniversario(dateString: string | undefined | null): string {
+  if (!dateString) return '-';
+  try {
+    const parts = dateString.split('T')[0].split('-');
+    if (parts.length === 3) {
+      return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}`;
+    }
+    return dateString;
+  } catch {
+    return dateString;
+  }
+}
+
+/**
  * Formata data e hora no formato brasileiro DD/MM/YYYY HH:mm
  */
 export function formatDateTime(dateTimeString: string | undefined | null): string {

@@ -30,13 +30,38 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
     observacoes: cliente?.observacoes || '',
   });
 
+  // Extrai dia e mês do aniversário (se houver)
+  const parseAnivDiaMes = (val?: string) => {
+    if (!val) return { dia: '', mes: '' };
+    const parts = val.split('T')[0].split('-');
+    if (parts.length === 3) {
+      return { dia: parts[2].padStart(2, '0'), mes: parts[1].padStart(2, '0') };
+    }
+    return { dia: '', mes: '' };
+  };
+
+  const initialAniv = parseAnivDiaMes(cliente?.data_nascimento);
+  const [anivDia, setAnivDia] = useState<string>(initialAniv.dia);
+  const [anivMes, setAnivMes] = useState<string>(initialAniv.mes);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nome.trim()) return alert('Informe o nome do cliente');
     if (!formData.whatsapp.trim()) return alert('Informe o WhatsApp do cliente');
 
+    if ((anivDia && !anivMes) || (!anivDia && anivMes)) {
+      return alert('Para registrar o aniversário, selecione tanto o dia quanto o mês (ou deixe ambos em branco se o cliente não quiser informar).');
+    }
+
+    let dataNascFinal = '';
+    if (anivDia && anivMes) {
+      const anoOrig = cliente?.data_nascimento ? cliente.data_nascimento.split('-')[0] : '2000';
+      dataNascFinal = `${anoOrig || '2000'}-${anivMes.padStart(2, '0')}-${anivDia.padStart(2, '0')}`;
+    }
+
     salvarCliente({
       ...formData,
+      data_nascimento: dataNascFinal,
       valor_mensalidade: Number(formData.valor_mensalidade),
       dia_vencimento: Number(formData.dia_vencimento),
     });
@@ -186,13 +211,45 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
             </div>
 
             <div className="form-group">
-              <label className="form-label">Data de Nascimento (Aniversário)</label>
-              <input
-                type="date"
-                className="form-control"
-                value={formData.data_nascimento}
-                onChange={e => setFormData({ ...formData, data_nascimento: e.target.value })}
-              />
+              <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Aniversário</span>
+                <span style={{ fontSize: '0.72rem', fontWeight: 500, color: 'var(--text-subtle)' }}>Dia e Mês</span>
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '8px' }}>
+                <select
+                  className="form-control"
+                  value={anivDia}
+                  onChange={e => setAnivDia(e.target.value)}
+                  title="Dia do aniversário"
+                >
+                  <option value="">Dia</option>
+                  {Array.from({ length: 31 }, (_, i) => {
+                    const d = String(i + 1).padStart(2, '0');
+                    return <option key={d} value={d}>Dia {d}</option>;
+                  })}
+                </select>
+
+                <select
+                  className="form-control"
+                  value={anivMes}
+                  onChange={e => setAnivMes(e.target.value)}
+                  title="Mês do aniversário"
+                >
+                  <option value="">Mês</option>
+                  <option value="01">01 - Janeiro</option>
+                  <option value="02">02 - Fevereiro</option>
+                  <option value="03">03 - Março</option>
+                  <option value="04">04 - Abril</option>
+                  <option value="05">05 - Maio</option>
+                  <option value="06">06 - Junho</option>
+                  <option value="07">07 - Julho</option>
+                  <option value="08">08 - Agosto</option>
+                  <option value="09">09 - Setembro</option>
+                  <option value="10">10 - Outubro</option>
+                  <option value="11">11 - Novembro</option>
+                  <option value="12">12 - Dezembro</option>
+                </select>
+              </div>
             </div>
           </div>
 

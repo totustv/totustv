@@ -18,7 +18,7 @@ import {
 import { useTotus } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Cliente, Cobranca } from '../types';
-import { formatCurrency, formatDate, cleanWhatsAppNumber, isToday, isTomorrow, isPastDate, formatStatusBadge } from '../lib/utils';
+import { formatCurrency, formatDate, formatAniversario, cleanWhatsAppNumber, isToday, isTomorrow, isPastDate, formatStatusBadge } from '../lib/utils';
 
 interface ClientesPageProps {
   onOpenNovoCliente: () => void;
@@ -176,7 +176,7 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
                   <th>Estado</th>
                   <th>Cidade</th>
                   <th>Indicação</th>
-                  <th>Data de Nascimento</th>
+                  <th>Aniversário</th>
                   <th style={{ textAlign: 'right' }}>Ações</th>
                 </tr>
               </thead>
@@ -292,7 +292,7 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
                         {cli.data_nascimento ? (
                           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                             <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
-                              {formatDate(cli.data_nascimento)}
+                              {formatAniversario(cli.data_nascimento)}
                             </span>
                             {isAniversarianteMes(cli.data_nascimento) && (
                               <span title="Aniversariante deste mês!" style={{ fontSize: '0.85rem' }}>
