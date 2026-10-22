@@ -120,8 +120,8 @@ export const DespesaModal: React.FC<DespesaModalProps> = ({ despesa, onClose }) 
                 value={formData.status}
                 onChange={e => setFormData({ ...formData, status: e.target.value as any })}
               >
-                <option value="pendente">Pendente (Compromisso Futuro)</option>
-                <option value="paga">Paga (Liquidação Imediata)</option>
+                <option value="pendente">Pendente</option>
+                <option value="paga">Paga</option>
               </select>
             </div>
           </div>
