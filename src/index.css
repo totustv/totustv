@@ -722,7 +722,7 @@ select.form-control {
 /* ---------- Mobile (cara de app) ---------- */
 @media (max-width: 768px) {
   :root {
-    --bottom-nav-height: 64px;
+    --bottom-nav-height: 74px;
   }
 
   html {
@@ -855,13 +855,13 @@ select.form-control {
     right: 0;
     bottom: 0;
     z-index: 40;
-    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
-    padding: 6px 6px env(safe-area-inset-bottom);
-    background-color: color-mix(in srgb, var(--bg-secondary) 90%, transparent);
-    backdrop-filter: saturate(180%) blur(18px);
-    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    min-height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    padding: 8px 8px max(14px, env(safe-area-inset-bottom, 14px));
+    background-color: color-mix(in srgb, var(--bg-secondary) 94%, transparent);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
     border-top: 1px solid var(--border-subtle);
-    box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.08);
   }
 
   .bottom-nav-item {
@@ -870,17 +870,19 @@ select.form-control {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 4px;
     border: none;
     background: none;
     color: var(--text-subtle);
     font-family: var(--font-sans);
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     font-weight: 600;
     cursor: pointer;
-    border-radius: 14px;
+    border-radius: 12px;
+    padding: 2px 0;
     transition: color 0.15s ease, transform 0.15s ease;
     min-width: 0;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .bottom-nav-item:active {
@@ -933,7 +935,7 @@ select.form-control {
 
   /* ----- Corpo da página ----- */
   .page-body {
-    padding: 16px 14px calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 20px);
+    padding: 16px 14px calc(var(--bottom-nav-height) + max(14px, env(safe-area-inset-bottom, 14px)) + 20px);
   }
 
   .page-body > div {
