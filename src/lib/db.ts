@@ -1188,6 +1188,48 @@ export class TotusDBManager {
     return cliente.status;
   }
 
+  public excluirCliente(clienteId: string) {
+    const idx = this.db.clientes.findIndex(c => c.id === clienteId);
+    if (idx === -1) return;
+
+    this.db.clientes.splice(idx, 1);
+
+    // 1. Cobranças do cliente
+    const cobrancasRemovidas = this.db.cobrancas.filter(c => c.cliente_id === clienteId);
+    const cobrancasIds = new Set(cobrancasRemovidas.map(c => c.id));
+    this.db.cobrancas = this.db.cobrancas.filter(c => c.cliente_id !== clienteId);
+
+    // 2. Pagamentos vinculados
+    this.db.pagamentos = this.db.pagamentos.filter(p => p.cliente_id !== clienteId && !cobrancasIds.has(p.cobranca_id));
+
+    // 3. Entradas do fluxo de caixa originadas desses pagamentos ou do cliente
+    this.db.fluxo_caixa = this.db.fluxo_caixa.filter(f => f.cliente_id !== clienteId && (!f.origem_id || !cobrancasIds.has(f.origem_id)));
+
+    // 4. Bônus onde o cliente é o beneficiário ou foi indicado
+    this.db.bonus = this.db.bonus.filter(b => b.cliente_id !== clienteId && b.indicado_id !== clienteId);
+
+    // 5. Histórico de vencimentos, promessas e contatos
+    this.db.historico_vencimentos = (this.db.historico_vencimentos || []).filter(h => h.cliente_id !== clienteId);
+    this.db.promessas = (this.db.promessas || []).filter(p => p.cliente_id !== clienteId);
+    this.db.contatos = (this.db.contatos || []).filter(c => c.cliente_id !== clienteId);
+
+    // 6. Atualizar outros clientes que tinham este como padrinho
+    this.db.clientes.forEach(c => {
+      if (c.indicado_por === clienteId) {
+        c.indicado_por = undefined;
+      }
+    });
+
+    this.persist();
+
+    // Sincronizar exclusão com Supabase
+    this.pushToSupabase('clientes', { id: clienteId }, 'delete', 'id', clienteId);
+    this.pushToSupabase('cobrancas', { cliente_id: clienteId }, 'delete', 'cliente_id', clienteId);
+    this.pushToSupabase('pagamentos', { cliente_id: clienteId }, 'delete', 'cliente_id', clienteId);
+    this.pushToSupabase('bonus_beneficios', { cliente_id: clienteId }, 'delete', 'cliente_id', clienteId);
+    this.pushToSupabase('bonus_beneficios', { indicado_id: clienteId }, 'delete', 'indicado_id', clienteId);
+  }
+
   // ----------------------------------------------------------------------------
   // COBRANÇAS & CICLOS
   // ----------------------------------------------------------------------------

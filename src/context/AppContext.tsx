@@ -39,6 +39,7 @@ interface AppContextType {
   // Ações do Banco
   salvarCliente: (data: any) => Cliente;
   toggleStatusCliente: (id: string) => void;
+  excluirCliente: (id: string) => void;
   transferirCliente: (clienteId: string, novoResellerId: string | undefined, motivo?: string) => void;
   salvarUsuario: (data: any) => UserProfile;
   toggleStatusUsuario: (id: string) => UserProfile;
@@ -389,6 +390,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             tabela: 'clientes',
             registro_id: id,
             detalhes: `Status do cliente ${cli?.nome || id} alterado para ${novoStatus.toUpperCase()}`,
+          });
+        },
+        excluirCliente: (id) => {
+          if (!clienteIdsPermitidos.has(id) && !isAdmin) {
+            throw new Error('Permissão negada: este cliente não pertence à sua carteira');
+          }
+          const cli = totusDB.getClienteById(id);
+          totusDB.excluirCliente(id);
+          totusDB.registrarLogAuditoria({
+            user_id: currentUser?.id || 'anon',
+            user_nome: currentUser?.nome || 'Usuário',
+            user_email: currentUser?.email || '',
+            acao: 'excluir_cliente',
+            tabela: 'clientes',
+            registro_id: id,
+            detalhes: `Exclusão permanente do cliente ${cli?.nome || id} (${cli?.whatsapp || ''})`,
           });
         },
         transferirCliente: (clienteId, novoResellerId, motivo) => {

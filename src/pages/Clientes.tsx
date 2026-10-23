@@ -14,6 +14,7 @@ import {
   ChevronRight,
   TrendingUp,
   MapPin,
+  Trash2,
 } from 'lucide-react';
 import { useTotus } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -39,7 +40,7 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
   onOpenHistoricoModal,
   filtroGlobal = '',
 }) => {
-  const { clientes, cobrancas, toggleStatusCliente, bonus, promessas } = useTotus();
+  const { clientes, cobrancas, toggleStatusCliente, bonus, promessas, excluirCliente } = useTotus();
   const { isAdmin, currentUser } = useAuth();
   const [busca, setBusca] = useState(filtroGlobal);
   const [filtroRapido, setFiltroRapido] = useState<
@@ -331,6 +332,20 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
                           title="Editar Cadastro"
                         >
                           <Edit2 size={15} />
+                        </button>
+
+                        {/* Excluir Cliente */}
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Tem certeza que deseja excluir o cliente "${cli.nome}"? Todas as faturas e registros vinculados serão removidos.`)) {
+                              excluirCliente(cli.id);
+                            }
+                          }}
+                          className="btn btn-secondary btn-sm btn-icon"
+                          title="Excluir Cliente"
+                          style={{ color: 'var(--accent-rose)' }}
+                        >
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </td>

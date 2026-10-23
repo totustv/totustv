@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, UserPlus, Save, Shield, MapPin, Globe } from 'lucide-react';
+import { X, UserPlus, Save, Shield, MapPin, Globe, Trash2 } from 'lucide-react';
 import { Cliente } from '../../types';
 import { useTotus } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -10,7 +10,7 @@ interface ClienteModalProps {
 }
 
 export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) => {
-  const { salvarCliente, clientes, config, usuarios } = useTotus();
+  const { salvarCliente, clientes, config, usuarios, excluirCliente } = useTotus();
   const { currentUser, isAdmin, isReseller } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -331,14 +331,35 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-            <button type="button" onClick={onClose} className="btn btn-secondary">
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary">
-              <Save size={16} />
-              <span>Salvar Cliente</span>
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+            {cliente ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`Tem certeza que deseja excluir o cliente "${cliente.nome}"? Todas as faturas e registros vinculados serão removidos.`)) {
+                    excluirCliente(cliente.id);
+                    onClose();
+                  }
+                }}
+                className="btn btn-secondary"
+                style={{ color: 'var(--accent-rose)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+              >
+                <Trash2 size={16} />
+                <span>Excluir Cliente</span>
+              </button>
+            ) : (
+              <div />
+            )}
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="button" onClick={onClose} className="btn btn-secondary">
+                Cancelar
+              </button>
+              <button type="submit" className="btn btn-primary">
+                <Save size={16} />
+                <span>Salvar Cliente</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>
