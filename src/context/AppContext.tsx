@@ -59,6 +59,7 @@ interface AppContextType {
   marcarDespesaComoPaga: (id: string, params: { data_pagamento: string; forma_pagamento: FormaPagamento }) => void;
   cancelarDespesa: (id: string, motivo: string) => void;
   excluirDespesa: (id: string) => void;
+  excluirItemFluxoCaixa: (id: string) => void;
   salvarCategoriaDespesa: (nome: string, cor?: string, icone?: string) => void;
   salvarConfig: (cfg: Partial<ConfiguracoesApp>) => void;
   salvarModeloMensagem: (data: Partial<ModeloMensagem> & { titulo: string; texto: string }) => ModeloMensagem;
@@ -583,6 +584,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             tabela: 'despesas',
             registro_id: id,
             detalhes: `Exclusão permanente de despesa: ${desp?.descricao || id} (R$ ${desp?.valor || 0})`,
+          });
+        },
+        excluirItemFluxoCaixa: (id) => {
+          if (!isAdmin) {
+            throw new Error('Apenas administradores podem excluir itens do fluxo de caixa');
+          }
+          totusDB.excluirItemFluxoCaixa(id);
+          totusDB.registrarLogAuditoria({
+            user_id: currentUser?.id || 'anon',
+            user_nome: currentUser?.nome || 'Usuário',
+            user_email: currentUser?.email || '',
+            acao: 'excluir_fluxo_caixa',
+            tabela: 'fluxo_caixa',
+            registro_id: id,
+            detalhes: `Exclusão permanente de lançamento do Livro Caixa: ID ${id}`,
           });
         },
         salvarCategoriaDespesa: (n, c, i) => {

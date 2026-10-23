@@ -38,7 +38,7 @@ interface FinanceiroPageProps {
 }
 
 export const FinanceiroPage: React.FC<FinanceiroPageProps> = ({ onEditDespesa }) => {
-  const { kpis, fluxoCaixa, despesas, cobrancas, clientes, excluirDespesa } = useTotus();
+  const { kpis, fluxoCaixa, despesas, cobrancas, clientes, excluirDespesa, excluirItemFluxoCaixa } = useTotus();
   const [filtroTipoFluxo, setFiltroTipoFluxo] = useState<'todos' | 'entrada' | 'saida'>('todos');
   const [mesSelecionado, setMesSelecionado] = useState<number>(10);
   const [anoSelecionado, setAnoSelecionado] = useState<number>(2026);
@@ -368,13 +368,15 @@ export const FinanceiroPage: React.FC<FinanceiroPageProps> = ({ onEditDespesa })
                             )}
                             <button
                               className="btn btn-secondary btn-sm btn-icon"
-                              title="Excluir despesa"
+                              title="Excluir despesa do Livro Caixa"
                               style={{ color: 'var(--accent-rose)' }}
                               onClick={() => {
-                                const targetId = item.origem_id || desp?.id || item.id;
                                 const nome = desp ? desp.descricao : item.descricao;
-                                if (window.confirm(`Tem certeza que deseja excluir a despesa "${nome}"? Ela será removida permanentemente do Livro Caixa.`)) {
-                                  excluirDespesa(targetId);
+                                if (window.confirm(`Tem certeza que deseja excluir "${nome}"? Ela será removida permanentemente do Livro Caixa.`)) {
+                                  excluirItemFluxoCaixa(item.id);
+                                  if (item.origem_id) {
+                                    excluirDespesa(item.origem_id);
+                                  }
                                 }
                               }}
                             >

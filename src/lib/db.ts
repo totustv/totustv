@@ -769,6 +769,7 @@ export class TotusDBManager {
   constructor() {
     this.db = this.loadFromStorage();
     this.autoCalculateAtrasos();
+    this.reconciliarFluxoDespesas();
   }
 
   private loadFromStorage(): TotusDatabase {
@@ -1005,14 +1006,16 @@ export class TotusDBManager {
         updated = true;
       }
       if (resFluxo.data && resFluxo.data.length > 0) {
-        const cloudIds = new Set(resFluxo.data.map((f: any) => f.id));
-        const localNew = this.db.fluxo_caixa.filter(f => !cloudIds.has(f.id));
-        if (localNew.length > 0) {
-          for (const lf of localNew) {
-            this.pushToSupabase('fluxo_caixa', lf);
+        const validDespesaIds = new Set(this.db.despesas.map(d => d.id));
+        const filteredCloudFluxo = resFluxo.data.filter((f: any) => {
+          if (f.origem === 'despesa_paga' && f.origem_id && !validDespesaIds.has(f.origem_id)) {
+            return false;
           }
-        }
-        this.db.fluxo_caixa = [...resFluxo.data, ...localNew];
+          return true;
+        });
+        const cloudIds = new Set(filteredCloudFluxo.map((f: any) => f.id));
+        const localNew = this.db.fluxo_caixa.filter(f => !cloudIds.has(f.id));
+        this.db.fluxo_caixa = [...filteredCloudFluxo, ...localNew];
         updated = true;
       }
       if (resBonus.data && resBonus.data.length > 0) {
@@ -1035,6 +1038,7 @@ export class TotusDBManager {
       if (updated) {
         this.persist();
       }
+      this.reconciliarFluxoDespesas();
       return true;
     } catch (e) {
       console.warn('Erro ao sincronizar dados com Supabase:', e);
@@ -1879,16 +1883,88 @@ export class TotusDBManager {
 
   public excluirDespesa(despesaId: string) {
     const idx = this.db.despesas.findIndex(d => d.id === despesaId);
+    let despDescricao = '';
     if (idx !== -1) {
+      despDescricao = this.db.despesas[idx].descricao;
       this.db.despesas.splice(idx, 1);
     }
-    // Remove do fluxo de caixa se houver saída correspondente
+
     const flxId = `flx-desp-${despesaId}`;
-    this.db.fluxo_caixa = this.db.fluxo_caixa.filter(f => f.id !== flxId && f.origem_id !== despesaId && f.id !== despesaId);
+    const flxIdsToRemove: string[] = [];
+
+    this.db.fluxo_caixa = this.db.fluxo_caixa.filter(f => {
+      const isMatch = (
+        f.id === flxId ||
+        f.id === despesaId ||
+        f.origem_id === despesaId ||
+        (despDescricao && (
+          f.descricao === despDescricao ||
+          f.descricao.includes(despDescricao) ||
+          f.descricao === `Pagamento Despesa: ${despDescricao}` ||
+          despDescricao === f.descricao.replace(/pagamento despesa:\s*/i, '').trim()
+        ))
+      );
+      if (isMatch) {
+        flxIdsToRemove.push(f.id);
+        return false;
+      }
+      return true;
+    });
 
     this.persist();
     this.pushToSupabase('despesas', { id: despesaId }, 'delete', 'id', despesaId);
-    this.pushToSupabase('fluxo_caixa', { id: flxId }, 'delete', 'id', flxId);
+    this.pushToSupabase('fluxo_caixa', { origem_id: despesaId }, 'delete', 'origem_id', despesaId);
+    flxIdsToRemove.forEach(id => {
+      this.pushToSupabase('fluxo_caixa', { id }, 'delete', 'id', id);
+    });
+  }
+
+  public excluirItemFluxoCaixa(fluxoId: string) {
+    const item = this.db.fluxo_caixa.find(f => f.id === fluxoId);
+    if (!item) return;
+
+    this.db.fluxo_caixa = this.db.fluxo_caixa.filter(f => f.id !== fluxoId);
+
+    // Se tiver despesa vinculada, remove também de despesas
+    if (item.origem_id) {
+      const despIdx = this.db.despesas.findIndex(d => d.id === item.origem_id);
+      if (despIdx !== -1) {
+        this.db.despesas.splice(despIdx, 1);
+        this.pushToSupabase('despesas', { id: item.origem_id }, 'delete', 'id', item.origem_id);
+      }
+    }
+
+    this.persist();
+    this.pushToSupabase('fluxo_caixa', { id: fluxoId }, 'delete', 'id', fluxoId);
+    if (item.origem_id) {
+      this.pushToSupabase('fluxo_caixa', { origem_id: item.origem_id }, 'delete', 'origem_id', item.origem_id);
+    }
+  }
+
+  public reconciliarFluxoDespesas() {
+    const despesasIds = new Set(this.db.despesas.map(d => d.id));
+    const despesasDescricoes = new Set(this.db.despesas.map(d => d.descricao.toLowerCase().trim()));
+    const countBefore = this.db.fluxo_caixa.length;
+    const flxIdsToRemove: string[] = [];
+
+    this.db.fluxo_caixa = this.db.fluxo_caixa.filter(f => {
+      if (f.origem === 'despesa_paga' || (f.tipo === 'saida' && f.descricao.toLowerCase().includes('despesa'))) {
+        if (f.origem_id && despesasIds.has(f.origem_id)) return true;
+        const limpa = f.descricao.replace(/pagamento despesa:\s*/i, '').toLowerCase().trim();
+        if (despesasDescricoes.has(limpa)) return true;
+
+        flxIdsToRemove.push(f.id);
+        return false;
+      }
+      return true;
+    });
+
+    if (this.db.fluxo_caixa.length !== countBefore) {
+      this.persist();
+      flxIdsToRemove.forEach(id => {
+        this.pushToSupabase('fluxo_caixa', { id }, 'delete', 'id', id);
+      });
+    }
   }
 
   // ----------------------------------------------------------------------------
