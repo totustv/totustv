@@ -274,6 +274,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
                 <option value="">Nenhum (Cliente Direto)</option>
                 {clientes
                   .filter(c => c.id !== cliente?.id)
+                  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }))
                   .map(c => (
                     <option key={c.id} value={c.id}>{c.nome}</option>
                   ))}

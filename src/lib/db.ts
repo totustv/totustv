@@ -174,374 +174,11 @@ const INITIAL_CATEGORIAS: CategoriaDespesa[] = [
   { id: 'cat-8', nome: 'Outros', cor: '#64748b', icone: 'HelpCircle' },
 ];
 
-const INITIAL_CLIENTES: Cliente[] = [
-  {
-    id: 'cli-1',
-    nome: 'Carlos Eduardo Mendes',
-    whatsapp: '11981234567',
-    valor_mensalidade: 35.00,
-    dia_vencimento: 10,
-    data_cadastro: '2026-01-15T10:00:00Z',
-    data_inicio_servico: '2026-01-15',
-    data_nascimento: '1988-10-14', // Aniversariante do mês de Outubro!
-    pais: 'Brasil',
-    estado: 'SP',
-    cidade: 'São Paulo',
-    status: 'ativo',
-    reseller_id: 'user-reseller-1', // Carteira do Revendedor A (Carlos Revenda SP)
-    observacoes: 'Cliente pioneiro. Smart TV Samsung sala e quarto.',
-    created_at: '2026-01-15T10:00:00Z',
-    updated_at: '2026-10-01T10:00:00Z',
-  },
-  {
-    id: 'cli-2',
-    nome: 'Juliana Beatriz Silveira',
-    whatsapp: '11972345678',
-    valor_mensalidade: 40.00,
-    dia_vencimento: 20,
-    data_cadastro: '2026-02-10T14:30:00Z',
-    data_inicio_servico: '2026-02-10',
-    data_nascimento: '1994-05-22',
-    pais: 'Brasil',
-    estado: 'SP',
-    cidade: 'Campinas',
-    status: 'ativo',
-    reseller_id: 'user-reseller-1', // Carteira do Revendedor A (Carlos Revenda SP)
-    observacoes: 'Plano com 2 telas simultâneas.',
-    created_at: '2026-02-10T14:30:00Z',
-    updated_at: '2026-10-01T10:00:00Z',
-  },
-  {
-    id: 'cli-3',
-    nome: 'Marcos Vinicius Rocha',
-    whatsapp: '11993456789',
-    valor_mensalidade: 35.00,
-    dia_vencimento: 30,
-    data_cadastro: '2026-03-01T09:00:00Z',
-    data_inicio_servico: '2026-03-01',
-    data_nascimento: '1990-11-03',
-    pais: 'Brasil',
-    estado: 'RJ',
-    cidade: 'Rio de Janeiro',
-    status: 'ativo',
-    reseller_id: 'user-reseller-2', // Carteira do Revendedor B (Renato Revenda RJ)
-    indicado_por: 'cli-1', // Indicado por Carlos!
-    observacoes: 'Indicado por Carlos Eduardo. Muito pontual.',
-    created_at: '2026-03-01T09:00:00Z',
-    updated_at: '2026-10-01T10:00:00Z',
-  },
-  {
-    id: 'cli-4',
-    nome: 'Fernanda Cristina Souza',
-    whatsapp: '11964567890',
-    valor_mensalidade: 35.00,
-    dia_vencimento: 10,
-    data_cadastro: '2026-04-12T11:00:00Z',
-    data_inicio_servico: '2026-04-12',
-    data_nascimento: '1985-08-19',
-    pais: 'Brasil',
-    estado: 'RJ',
-    cidade: 'Niterói',
-    status: 'ativo',
-    reseller_id: 'user-reseller-2', // Carteira do Revendedor B (Renato Revenda RJ)
-    observacoes: 'Tv box Xiaomi.',
-    created_at: '2026-04-12T11:00:00Z',
-    updated_at: '2026-10-01T10:00:00Z',
-  },
-  {
-    id: 'cli-5',
-    nome: 'Rodrigo Barbosa Lima',
-    whatsapp: '11955678901',
-    valor_mensalidade: 35.00,
-    dia_vencimento: 20,
-    data_cadastro: '2026-05-20T16:00:00Z',
-    data_inicio_servico: '2026-05-20',
-    data_nascimento: '1997-10-25', // Aniversariante de Outubro!
-    pais: 'Brasil',
-    estado: 'MG',
-    cidade: 'Belo Horizonte',
-    status: 'ativo',
-    reseller_id: undefined, // Carteira direta da Totus TV (Admin)
-    observacoes: 'Usa no celular e Fire TV Stick.',
-    created_at: '2026-05-20T16:00:00Z',
-    updated_at: '2026-10-01T10:00:00Z',
-  },
-  {
-    id: 'cli-6',
-    nome: 'Patrícia Helena Alencar',
-    whatsapp: '11946789012',
-    valor_mensalidade: 35.00,
-    dia_vencimento: 10,
-    data_cadastro: '2026-07-05T10:15:00Z',
-    data_inicio_servico: '2026-07-05',
-    data_nascimento: '1992-03-12',
-    pais: 'Brasil',
-    estado: 'SP',
-    cidade: 'Santos',
-    status: 'inativo',
-    reseller_id: 'user-reseller-1', // Pertenceu ao Revendedor A
-    observacoes: 'Cancelou por mudança de cidade em agosto.',
-    created_at: '2026-07-05T10:15:00Z',
-    updated_at: '2026-08-30T10:00:00Z',
-  },
-  {
-    id: 'cli-7',
-    nome: 'Lucas Gabriel Martins',
-    whatsapp: '11937890123',
-    valor_mensalidade: 35.00,
-    dia_vencimento: 10,
-    data_cadastro: '2026-10-02T13:40:00Z', // Novo no mês
-    data_inicio_servico: '2026-10-02',
-    data_nascimento: '2001-09-15',
-    status: 'ativo',
-    reseller_id: undefined, // Carteira direta da Totus TV (Admin)
-    observacoes: 'Novo cliente de outubro.',
-    created_at: '2026-10-02T13:40:00Z',
-    updated_at: '2026-10-02T13:40:00Z',
-  }
-];
-
-const INITIAL_COBRANCAS: Cobranca[] = [
-  // Carlos (cli-1) Vencimento dia 10 - Outubro (Dispensado por Aniversário de Carlos!)
-  {
-    id: 'cob-1',
-    cliente_id: 'cli-1',
-    competencia_mes: 10,
-    competencia_ano: 2026,
-    valor: 35.00,
-    data_vencimento: '2026-10-10',
-    status: 'dispensado_aniversario',
-    bonus_aplicado_id: 'bon-aniv-1',
-    created_at: '2026-10-01T00:00:00Z',
-    updated_at: '2026-10-01T00:00:00Z',
-  },
-  // Fernanda (cli-4) Vencimento dia 10 - Outubro (Venceu ontem/hoje, atrasado aguardando)
-  {
-    id: 'cob-2',
-    cliente_id: 'cli-4',
-    competencia_mes: 10,
-    competencia_ano: 2026,
-    valor: 35.00,
-    data_vencimento: '2026-10-10',
-    status: 'prometeu_pagar',
-    created_at: '2026-10-01T00:00:00Z',
-    updated_at: '2026-10-11T09:00:00Z',
-  },
-  // Lucas (cli-7) Vencimento dia 10 - Outubro (Pago na ativação)
-  {
-    id: 'cob-3',
-    cliente_id: 'cli-7',
-    competencia_mes: 10,
-    competencia_ano: 2026,
-    valor: 35.00,
-    data_vencimento: '2026-10-10',
-    status: 'pago',
-    created_at: '2026-10-02T00:00:00Z',
-    updated_at: '2026-10-02T14:00:00Z',
-  },
-  // Juliana (cli-2) Vencimento dia 20 - Outubro (Pendente)
-  {
-    id: 'cob-4',
-    cliente_id: 'cli-2',
-    competencia_mes: 10,
-    competencia_ano: 2026,
-    valor: 40.00,
-    data_vencimento: '2026-10-20',
-    status: 'pendente',
-    created_at: '2026-10-01T00:00:00Z',
-    updated_at: '2026-10-01T00:00:00Z',
-  },
-  // Rodrigo (cli-5) Vencimento dia 20 - Outubro (Dispensado por Aniversário de Outubro)
-  {
-    id: 'cob-5',
-    cliente_id: 'cli-5',
-    competencia_mes: 10,
-    competencia_ano: 2026,
-    valor: 35.00,
-    data_vencimento: '2026-10-20',
-    status: 'dispensado_aniversario',
-    bonus_aplicado_id: 'bon-aniv-2',
-    created_at: '2026-10-01T00:00:00Z',
-    updated_at: '2026-10-01T00:00:00Z',
-  },
-  // Marcos (cli-3) Vencimento dia 30 - Outubro (Pendente)
-  {
-    id: 'cob-6',
-    cliente_id: 'cli-3',
-    competencia_mes: 10,
-    competencia_ano: 2026,
-    valor: 35.00,
-    data_vencimento: '2026-10-30',
-    status: 'pendente',
-    created_at: '2026-10-01T00:00:00Z',
-    updated_at: '2026-10-01T00:00:00Z',
-  },
-  // Cobranças Setembro (Mês anterior - para comparativos financeiros)
-  {
-    id: 'cob-set-1',
-    cliente_id: 'cli-1',
-    competencia_mes: 9,
-    competencia_ano: 2026,
-    valor: 35.00,
-    data_vencimento: '2026-09-10',
-    status: 'pago',
-    created_at: '2026-09-01T00:00:00Z',
-    updated_at: '2026-09-10T10:00:00Z',
-  },
-  {
-    id: 'cob-set-2',
-    cliente_id: 'cli-2',
-    competencia_mes: 9,
-    competencia_ano: 2026,
-    valor: 40.00,
-    data_vencimento: '2026-09-20',
-    status: 'pago',
-    created_at: '2026-09-01T00:00:00Z',
-    updated_at: '2026-09-19T11:00:00Z',
-  },
-  {
-    id: 'cob-set-3',
-    cliente_id: 'cli-3',
-    competencia_mes: 9,
-    competencia_ano: 2026,
-    valor: 35.00,
-    data_vencimento: '2026-09-30',
-    status: 'pago',
-    created_at: '2026-09-01T00:00:00Z',
-    updated_at: '2026-09-30T16:00:00Z',
-  },
-  {
-    id: 'cob-set-4',
-    cliente_id: 'cli-4',
-    competencia_mes: 9,
-    competencia_ano: 2026,
-    valor: 35.00,
-    data_vencimento: '2026-09-10',
-    status: 'pago',
-    created_at: '2026-09-01T00:00:00Z',
-    updated_at: '2026-09-09T18:00:00Z',
-  },
-  {
-    id: 'cob-set-5',
-    cliente_id: 'cli-5',
-    competencia_mes: 9,
-    competencia_ano: 2026,
-    valor: 35.00,
-    data_vencimento: '2026-09-20',
-    status: 'pago',
-    created_at: '2026-09-01T00:00:00Z',
-    updated_at: '2026-09-20T14:30:00Z',
-  }
-];
-
-const INITIAL_PAGAMENTOS: Pagamento[] = [
-  {
-    id: 'pag-1',
-    cobranca_id: 'cob-3',
-    cliente_id: 'cli-7',
-    valor_pago: 35.00,
-    data_pagamento: '2026-10-02T14:00:00Z',
-    forma_pagamento: 'pix',
-    observacao: 'Pagamento inicial na adesão via Pix',
-    created_at: '2026-10-02T14:00:00Z',
-  },
-  {
-    id: 'pag-set-1',
-    cobranca_id: 'cob-set-1',
-    cliente_id: 'cli-1',
-    valor_pago: 35.00,
-    data_pagamento: '2026-09-10T10:00:00Z',
-    forma_pagamento: 'pix',
-    created_at: '2026-09-10T10:00:00Z',
-  },
-  {
-    id: 'pag-set-2',
-    cobranca_id: 'cob-set-2',
-    cliente_id: 'cli-2',
-    valor_pago: 40.00,
-    data_pagamento: '2026-09-19T11:00:00Z',
-    forma_pagamento: 'pix',
-    created_at: '2026-09-19T11:00:00Z',
-  },
-  {
-    id: 'pag-set-3',
-    cobranca_id: 'cob-set-3',
-    cliente_id: 'cli-3',
-    valor_pago: 35.00,
-    data_pagamento: '2026-09-30T16:00:00Z',
-    forma_pagamento: 'dinheiro',
-    created_at: '2026-09-30T16:00:00Z',
-  },
-  {
-    id: 'pag-set-4',
-    cobranca_id: 'cob-set-4',
-    cliente_id: 'cli-4',
-    valor_pago: 35.00,
-    data_pagamento: '2026-09-09T18:00:00Z',
-    forma_pagamento: 'pix',
-    created_at: '2026-09-09T18:00:00Z',
-  },
-  {
-    id: 'pag-set-5',
-    cobranca_id: 'cob-set-5',
-    cliente_id: 'cli-5',
-    valor_pago: 35.00,
-    data_pagamento: '2026-09-20T14:30:00Z',
-    forma_pagamento: 'pix',
-    created_at: '2026-09-20T14:30:00Z',
-  }
-];
-
-const INITIAL_PROMESSAS: PromessaPagamento[] = [
-  {
-    id: 'prom-1',
-    cliente_id: 'cli-4',
-    cobranca_id: 'cob-2',
-    data_promessa: '2026-10-10',
-    data_combinada: '2026-10-13',
-    valor_prometido: 35.00,
-    situacao: 'aguardando',
-    observacao: 'Cliente pediu para pagar na terça-feira dia 13 quando recebe adiantamento.',
-    created_at: '2026-10-10T15:20:00Z',
-    updated_at: '2026-10-10T15:20:00Z',
-  }
-];
-
-const INITIAL_BONUS: BonusBeneficio[] = [
-  {
-    id: 'bon-aniv-1',
-    cliente_id: 'cli-1',
-    tipo: 'aniversario',
-    status: 'utilizado',
-    competencia_uso_mes: 10,
-    competencia_uso_ano: 2026,
-    cobranca_dispensada_id: 'cob-1',
-    motivo_justificativa: 'Mês de aniversário do cliente (14/10)',
-    data_concessao: '2026-10-01T00:00:00Z',
-    data_utilizacao: '2026-10-01T00:00:00Z',
-  },
-  {
-    id: 'bon-aniv-2',
-    cliente_id: 'cli-5',
-    tipo: 'aniversario',
-    status: 'utilizado',
-    competencia_uso_mes: 10,
-    competencia_uso_ano: 2026,
-    cobranca_dispensada_id: 'cob-5',
-    motivo_justificativa: 'Mês de aniversário do cliente (25/10)',
-    data_concessao: '2026-10-01T00:00:00Z',
-    data_utilizacao: '2026-10-01T00:00:00Z',
-  },
-  {
-    id: 'bon-ind-1',
-    cliente_id: 'cli-1', // Carlos indicou Marcos
-    tipo: 'indicacao',
-    status: 'disponivel', // Disponível para novembro ou próximo ciclo
-    indicado_id: 'cli-3', // Marcos Vinicius
-    motivo_justificativa: 'Indicação confirmada de Marcos Vinicius Rocha',
-    data_concessao: '2026-03-31T00:00:00Z',
-  }
-];
+const INITIAL_CLIENTES: Cliente[] = [];
+const INITIAL_COBRANCAS: Cobranca[] = [];
+const INITIAL_PAGAMENTOS: Pagamento[] = [];
+const INITIAL_PROMESSAS: PromessaPagamento[] = [];
+const INITIAL_BONUS: BonusBeneficio[] = [];
 
 export const INITIAL_PROGRAMAS_BONUS: ProgramaBonus[] = [
   {
@@ -562,187 +199,16 @@ export const INITIAL_PROGRAMAS_BONUS: ProgramaBonus[] = [
   },
 ];
 
-const INITIAL_DESPESAS: Despesa[] = [
-  {
-    id: 'desp-1',
-    descricao: 'Servidor Principal VPS / Stream Cloud',
-    categoria_id: 'cat-1',
-    categoria_nome: 'Servidores e Hospedagem',
-    valor: 45.00,
-    data_competencia: '2026-10-01',
-    data_vencimento: '2026-10-05',
-    data_pagamento: '2026-10-05',
-    status: 'paga',
-    forma_pagamento: 'pix',
-    recorrente: true,
-    periodicidade: 'mensal',
-    observacoes: 'Servidor de alta disponibilidade.',
-    created_at: '2026-10-01T00:00:00Z',
-    updated_at: '2026-10-05T10:00:00Z',
-  },
-  {
-    id: 'desp-2',
-    descricao: 'Painel CMS e Licença de API',
-    categoria_id: 'cat-2',
-    categoria_nome: 'Sistemas e Ferramentas',
-    valor: 25.00,
-    data_competencia: '2026-10-01',
-    data_vencimento: '2026-10-15',
-    status: 'pendente',
-    forma_pagamento: 'pix',
-    recorrente: true,
-    periodicidade: 'mensal',
-    observacoes: 'Vence dia 15/10.',
-    created_at: '2026-10-01T00:00:00Z',
-    updated_at: '2026-10-01T00:00:00Z',
-  },
-  {
-    id: 'desp-set-1',
-    descricao: 'Servidor Principal VPS Setembro',
-    categoria_id: 'cat-1',
-    categoria_nome: 'Servidores e Hospedagem',
-    valor: 45.00,
-    data_competencia: '2026-09-01',
-    data_vencimento: '2026-09-05',
-    data_pagamento: '2026-09-05',
-    status: 'paga',
-    forma_pagamento: 'pix',
-    recorrente: true,
-    created_at: '2026-09-01T00:00:00Z',
-    updated_at: '2026-09-05T10:00:00Z',
-  },
-  {
-    id: 'desp-set-2',
-    descricao: 'Painel CMS Setembro',
-    categoria_id: 'cat-2',
-    categoria_nome: 'Sistemas e Ferramentas',
-    valor: 25.00,
-    data_competencia: '2026-09-01',
-    data_vencimento: '2026-09-15',
-    data_pagamento: '2026-09-15',
-    status: 'paga',
-    forma_pagamento: 'pix',
-    recorrente: true,
-    created_at: '2026-09-01T00:00:00Z',
-    updated_at: '2026-09-15T10:00:00Z',
-  }
-];
-
-const INITIAL_FLUXO: FluxoCaixaItem[] = [
-  // Outubro
-  {
-    id: 'flx-1',
-    data_movimento: '2026-10-02',
-    tipo: 'entrada',
-    valor: 35.00,
-    descricao: 'Mensalidade Totus TV - Lucas Gabriel Martins (10/2026)',
-    origem: 'pagamento_cliente',
-    origem_id: 'pag-1',
-    cliente_id: 'cli-7',
-    forma_pagamento: 'pix',
-    created_at: '2026-10-02T14:00:00Z',
-  },
-  {
-    id: 'flx-2',
-    data_movimento: '2026-10-05',
-    tipo: 'saida',
-    valor: 45.00,
-    descricao: 'Servidor Principal VPS / Stream Cloud',
-    origem: 'despesa_paga',
-    origem_id: 'desp-1',
-    forma_pagamento: 'pix',
-    created_at: '2026-10-05T10:00:00Z',
-  },
-  // Setembro
-  {
-    id: 'flx-set-1',
-    data_movimento: '2026-09-05',
-    tipo: 'saida',
-    valor: 45.00,
-    descricao: 'Servidor Principal VPS Setembro',
-    origem: 'despesa_paga',
-    origem_id: 'desp-set-1',
-    forma_pagamento: 'pix',
-    created_at: '2026-09-05T10:00:00Z',
-  },
-  {
-    id: 'flx-set-2',
-    data_movimento: '2026-09-09',
-    tipo: 'entrada',
-    valor: 35.00,
-    descricao: 'Mensalidade Totus TV - Fernanda Cristina Souza (09/2026)',
-    origem: 'pagamento_cliente',
-    origem_id: 'pag-set-4',
-    cliente_id: 'cli-4',
-    forma_pagamento: 'pix',
-    created_at: '2026-09-09T18:00:00Z',
-  },
-  {
-    id: 'flx-set-3',
-    data_movimento: '2026-09-10',
-    tipo: 'entrada',
-    valor: 35.00,
-    descricao: 'Mensalidade Totus TV - Carlos Eduardo Mendes (09/2026)',
-    origem: 'pagamento_cliente',
-    origem_id: 'pag-set-1',
-    cliente_id: 'cli-1',
-    forma_pagamento: 'pix',
-    created_at: '2026-09-10T10:00:00Z',
-  },
-  {
-    id: 'flx-set-4',
-    data_movimento: '2026-09-15',
-    tipo: 'saida',
-    valor: 25.00,
-    descricao: 'Painel CMS Setembro',
-    origem: 'despesa_paga',
-    origem_id: 'desp-set-2',
-    forma_pagamento: 'pix',
-    created_at: '2026-09-15T10:00:00Z',
-  },
-  {
-    id: 'flx-set-5',
-    data_movimento: '2026-09-19',
-    tipo: 'entrada',
-    valor: 40.00,
-    descricao: 'Mensalidade Totus TV - Juliana Beatriz Silveira (09/2026)',
-    origem: 'pagamento_cliente',
-    origem_id: 'pag-set-2',
-    cliente_id: 'cli-2',
-    forma_pagamento: 'pix',
-    created_at: '2026-09-19T11:00:00Z',
-  },
-  {
-    id: 'flx-set-6',
-    data_movimento: '2026-09-20',
-    tipo: 'entrada',
-    valor: 35.00,
-    descricao: 'Mensalidade Totus TV - Rodrigo Barbosa Lima (09/2026)',
-    origem: 'pagamento_cliente',
-    origem_id: 'pag-set-5',
-    cliente_id: 'cli-5',
-    forma_pagamento: 'pix',
-    created_at: '2026-09-20T14:30:00Z',
-  },
-  {
-    id: 'flx-set-7',
-    data_movimento: '2026-09-30',
-    tipo: 'entrada',
-    valor: 35.00,
-    descricao: 'Mensalidade Totus TV - Marcos Vinicius Rocha (09/2026)',
-    origem: 'pagamento_cliente',
-    origem_id: 'pag-set-3',
-    cliente_id: 'cli-3',
-    forma_pagamento: 'dinheiro',
-    created_at: '2026-09-30T16:00:00Z',
-  }
-];
+const INITIAL_DESPESAS: Despesa[] = [];
+const INITIAL_FLUXO: FluxoCaixaItem[] = [];
 
 // ==============================================================================
 // GERENCIADOR DE BANCO DE DADOS LOCAL E PERSISTENTE (AUDITÁVEL E ATÔMICO)
 // ==============================================================================
 
 const STORAGE_KEY = 'totustv_database_v1';
+const DELETED_CLIENTS_KEY = 'totustv_deleted_clients_v1';
+const DELETED_DESPESAS_KEY = 'totustv_deleted_despesas_v1';
 
 export interface TotusDatabase {
   config: ConfiguracoesApp;
@@ -760,27 +226,198 @@ export interface TotusDatabase {
   usuarios: UserProfile[];
   logs_auditoria: AuditLog[];
   modelos_mensagem?: ModeloMensagem[];
+  clientes_excluidos?: string[];
+  despesas_excluidas?: string[];
 }
 
 export class TotusDBManager {
   private db: TotusDatabase;
   private listeners: (() => void)[] = [];
+  private deletedClientIds: Set<string> = new Set();
+  private deletedDespesaIds: Set<string> = new Set();
 
   constructor() {
+    this.loadDeletedIds();
     this.db = this.loadFromStorage();
     this.autoCalculateAtrasos();
     this.reconciliarFluxoDespesas();
+    this.reconciliarClientesExcluidos();
+  }
+
+  private loadDeletedIds(): void {
+    // Clientes de teste de seed inicial marcados como excluídos para nunca retornarem
+    const initialTestClientIds = ['cli-1', 'cli-2', 'cli-3', 'cli-4', 'cli-5', 'cli-6', 'cli-7'];
+    initialTestClientIds.forEach(id => this.deletedClientIds.add(id));
+
+    try {
+      const storedClients = localStorage.getItem(DELETED_CLIENTS_KEY);
+      if (storedClients) {
+        const arr = JSON.parse(storedClients);
+        if (Array.isArray(arr)) {
+          arr.forEach(id => {
+            if (id && typeof id === 'string') this.deletedClientIds.add(id);
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar lista de clientes excluídos do storage:', e);
+    }
+
+    try {
+      const storedDesp = localStorage.getItem(DELETED_DESPESAS_KEY);
+      if (storedDesp) {
+        const arr = JSON.parse(storedDesp);
+        if (Array.isArray(arr)) {
+          arr.forEach(id => {
+            if (id && typeof id === 'string') this.deletedDespesaIds.add(id);
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar lista de despesas excluídas do storage:', e);
+    }
+  }
+
+  public getDeletedClientIds(): Set<string> {
+    return new Set(this.deletedClientIds);
+  }
+
+  public getDeletedDespesaIds(): Set<string> {
+    return new Set(this.deletedDespesaIds);
+  }
+
+  public registerDeletedClientId(id: string): void {
+    if (!id) return;
+    this.deletedClientIds.add(id);
+    try {
+      localStorage.setItem(DELETED_CLIENTS_KEY, JSON.stringify(Array.from(this.deletedClientIds)));
+    } catch (e) {
+      console.error('Falha ao salvar lista de clientes excluídos:', e);
+    }
+    if (this.db) {
+      this.db.clientes_excluidos = Array.from(this.deletedClientIds);
+    }
+  }
+
+  public unregisterDeletedClientId(id: string): void {
+    if (!id) return;
+    this.deletedClientIds.delete(id);
+    try {
+      localStorage.setItem(DELETED_CLIENTS_KEY, JSON.stringify(Array.from(this.deletedClientIds)));
+    } catch (e) {
+      console.error('Falha ao atualizar lista de clientes excluídos:', e);
+    }
+    if (this.db) {
+      this.db.clientes_excluidos = Array.from(this.deletedClientIds);
+    }
+  }
+
+  public registerDeletedDespesaId(id: string): void {
+    if (!id) return;
+    this.deletedDespesaIds.add(id);
+    try {
+      localStorage.setItem(DELETED_DESPESAS_KEY, JSON.stringify(Array.from(this.deletedDespesaIds)));
+    } catch (e) {
+      console.error('Falha ao salvar lista de despesas excluídas:', e);
+    }
+    if (this.db) {
+      this.db.despesas_excluidas = Array.from(this.deletedDespesaIds);
+    }
+  }
+
+  public unregisterDeletedDespesaId(id: string): void {
+    if (!id) return;
+    this.deletedDespesaIds.delete(id);
+    try {
+      localStorage.setItem(DELETED_DESPESAS_KEY, JSON.stringify(Array.from(this.deletedDespesaIds)));
+    } catch (e) {
+      console.error('Falha ao atualizar lista de despesas excluídas:', e);
+    }
+    if (this.db) {
+      this.db.despesas_excluidas = Array.from(this.deletedDespesaIds);
+    }
+  }
+
+  public reconciliarClientesExcluidos() {
+    if (!this.db) return;
+    const deleted = this.deletedClientIds;
+    if (deleted.size === 0) return;
+
+    let changed = false;
+
+    if (this.db.clientes.some(c => deleted.has(c.id))) {
+      this.db.clientes = this.db.clientes.filter(c => !deleted.has(c.id));
+      changed = true;
+    }
+    if (this.db.cobrancas.some(c => deleted.has(c.cliente_id))) {
+      this.db.cobrancas = this.db.cobrancas.filter(c => !deleted.has(c.cliente_id));
+      changed = true;
+    }
+    if (this.db.pagamentos.some(p => deleted.has(p.cliente_id))) {
+      this.db.pagamentos = this.db.pagamentos.filter(p => !deleted.has(p.cliente_id));
+      changed = true;
+    }
+    const testClientNames = ['Marcos Vinicius', 'Mariana Silveira', 'Carlos Eduardo Mendes', 'Juliana Beatriz', 'Fernanda Cristina', 'Rodrigo Barbosa', 'Lucas Gabriel', 'Patrícia Helena'];
+    const testFluxoIds = new Set(['flx-1', 'flx-2', 'flx-3', 'flx-4', 'flx-5', 'flx-set-1', 'flx-set-2', 'flx-set-3', 'flx-set-4', 'flx-set-5', 'flx-set-6', 'flx-set-7']);
+
+    if (this.db.fluxo_caixa.some(f => 
+      testFluxoIds.has(f.id) || 
+      f.id.startsWith('flx-set-') ||
+      (f.cliente_id && deleted.has(f.cliente_id)) ||
+      testClientNames.some(nome => f.descricao && f.descricao.includes(nome))
+    )) {
+      this.db.fluxo_caixa = this.db.fluxo_caixa.filter(f => 
+        !testFluxoIds.has(f.id) && 
+        !f.id.startsWith('flx-set-') && 
+        (!f.cliente_id || !deleted.has(f.cliente_id)) && 
+        !testClientNames.some(nome => f.descricao && f.descricao.includes(nome))
+      );
+      changed = true;
+    }
+    if (this.db.bonus.some(b => deleted.has(b.cliente_id) || (b.indicado_id && deleted.has(b.indicado_id)))) {
+      this.db.bonus = this.db.bonus.filter(b => !deleted.has(b.cliente_id) && (!b.indicado_id || !deleted.has(b.indicado_id)));
+      changed = true;
+    }
+    if (this.db.promessas && this.db.promessas.some(p => deleted.has(p.cliente_id))) {
+      this.db.promessas = this.db.promessas.filter(p => !deleted.has(p.cliente_id));
+      changed = true;
+    }
+    if (this.db.contatos && this.db.contatos.some(c => deleted.has(c.cliente_id))) {
+      this.db.contatos = this.db.contatos.filter(c => !deleted.has(c.cliente_id));
+      changed = true;
+    }
+    if (this.db.historico_vencimentos && this.db.historico_vencimentos.some(h => deleted.has(h.cliente_id))) {
+      this.db.historico_vencimentos = this.db.historico_vencimentos.filter(h => !deleted.has(h.cliente_id));
+      changed = true;
+    }
+
+    if (changed) {
+      this.persist();
+    }
   }
 
   private loadFromStorage(): TotusDatabase {
+    this.loadDeletedIds();
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Garantir retrocompatibilidade e integridade caso chaves novas não existam no localStorage anterior
-        return {
-          config: parsed.config || INITIAL_CONFIG,
-          clientes: (parsed.clientes || INITIAL_CLIENTES).map((c: any) => {
+        if (Array.isArray(parsed.clientes_excluidos)) {
+          parsed.clientes_excluidos.forEach((id: string) => {
+            if (id && typeof id === 'string') this.deletedClientIds.add(id);
+          });
+        }
+        if (Array.isArray(parsed.despesas_excluidas)) {
+          parsed.despesas_excluidas.forEach((id: string) => {
+            if (id && typeof id === 'string') this.deletedDespesaIds.add(id);
+          });
+        }
+
+        const rawClientes: any[] = Array.isArray(parsed.clientes) ? parsed.clientes : INITIAL_CLIENTES;
+        const validClientes = rawClientes
+          .filter((c: any) => c && c.id && !this.deletedClientIds.has(c.id))
+          .map((c: any) => {
             const init = INITIAL_CLIENTES.find(ic => ic.id === c.id);
             return {
               ...init,
@@ -791,20 +428,56 @@ export class TotusDBManager {
               data_nascimento: c.data_nascimento || init?.data_nascimento || '',
               indicado_por: c.indicado_por !== undefined ? c.indicado_por : init?.indicado_por,
             };
-          }),
-          cobrancas: parsed.cobrancas || INITIAL_COBRANCAS,
-          pagamentos: parsed.pagamentos || INITIAL_PAGAMENTOS,
-          historico_vencimentos: parsed.historico_vencimentos || [],
-          promessas: parsed.promessas || INITIAL_PROMESSAS,
-          contatos: parsed.contatos || [],
-          bonus: parsed.bonus || INITIAL_BONUS,
+          });
+
+        const rawCobrancas: any[] = Array.isArray(parsed.cobrancas) ? parsed.cobrancas : INITIAL_COBRANCAS;
+        const validCobrancas = rawCobrancas.filter((c: any) => c && !this.deletedClientIds.has(c.cliente_id));
+
+        const rawPagamentos: any[] = Array.isArray(parsed.pagamentos) ? parsed.pagamentos : INITIAL_PAGAMENTOS;
+        const validPagamentos = rawPagamentos.filter((p: any) => p && !this.deletedClientIds.has(p.cliente_id));
+
+        const rawDespesas: any[] = Array.isArray(parsed.despesas) ? parsed.despesas : INITIAL_DESPESAS;
+        const validDespesas = rawDespesas.filter((d: any) => d && !this.deletedDespesaIds.has(d.id));
+
+        const testClientNames = ['Marcos Vinicius', 'Mariana Silveira', 'Carlos Eduardo Mendes', 'Juliana Beatriz', 'Fernanda Cristina', 'Rodrigo Barbosa', 'Lucas Gabriel', 'Patrícia Helena'];
+        const testFluxoIds = new Set(['flx-1', 'flx-2', 'flx-3', 'flx-4', 'flx-5', 'flx-set-1', 'flx-set-2', 'flx-set-3', 'flx-set-4', 'flx-set-5', 'flx-set-6', 'flx-set-7']);
+
+        const rawFluxo: any[] = Array.isArray(parsed.fluxo_caixa) ? parsed.fluxo_caixa : INITIAL_FLUXO;
+        const validFluxo = rawFluxo.filter((f: any) => 
+          f && 
+          f.id &&
+          !testFluxoIds.has(f.id) &&
+          !f.id.startsWith('flx-set-') &&
+          (!f.cliente_id || !this.deletedClientIds.has(f.cliente_id)) && 
+          (!f.origem_id || !this.deletedDespesaIds.has(f.origem_id)) &&
+          !testClientNames.some(nome => f.descricao && f.descricao.includes(nome))
+        );
+
+        const rawBonus: any[] = Array.isArray(parsed.bonus) ? parsed.bonus : INITIAL_BONUS;
+        const validBonus = rawBonus.filter((b: any) => 
+          b && 
+          (!b.cliente_id || !this.deletedClientIds.has(b.cliente_id)) && 
+          (!b.indicado_id || !this.deletedClientIds.has(b.indicado_id))
+        );
+
+        return {
+          config: parsed.config || INITIAL_CONFIG,
+          clientes: validClientes,
+          cobrancas: validCobrancas,
+          pagamentos: validPagamentos,
+          historico_vencimentos: (parsed.historico_vencimentos || []).filter((h: any) => h && !this.deletedClientIds.has(h.cliente_id)),
+          promessas: (parsed.promessas || INITIAL_PROMESSAS).filter((p: any) => p && !this.deletedClientIds.has(p.cliente_id)),
+          contatos: (parsed.contatos || []).filter((c: any) => c && !this.deletedClientIds.has(c.cliente_id)),
+          bonus: validBonus,
           programas_bonus: parsed.programas_bonus && parsed.programas_bonus.length > 0 ? parsed.programas_bonus : INITIAL_PROGRAMAS_BONUS,
           categorias_despesas: parsed.categorias_despesas || INITIAL_CATEGORIAS,
-          despesas: parsed.despesas || INITIAL_DESPESAS,
-          fluxo_caixa: parsed.fluxo_caixa || INITIAL_FLUXO,
+          despesas: validDespesas,
+          fluxo_caixa: validFluxo,
           usuarios: parsed.usuarios && parsed.usuarios.length > 0 ? parsed.usuarios : INITIAL_USERS,
           logs_auditoria: parsed.logs_auditoria || INITIAL_AUDIT_LOGS,
           modelos_mensagem: parsed.modelos_mensagem && parsed.modelos_mensagem.length > 0 ? parsed.modelos_mensagem : INITIAL_MODELOS_MENSAGEM,
+          clientes_excluidos: Array.from(this.deletedClientIds),
+          despesas_excluidas: Array.from(this.deletedDespesaIds),
         };
       }
     } catch (e) {
@@ -813,20 +486,22 @@ export class TotusDBManager {
 
     return {
       config: INITIAL_CONFIG,
-      clientes: INITIAL_CLIENTES,
-      cobrancas: INITIAL_COBRANCAS,
-      pagamentos: INITIAL_PAGAMENTOS,
+      clientes: INITIAL_CLIENTES.filter(c => !this.deletedClientIds.has(c.id)),
+      cobrancas: INITIAL_COBRANCAS.filter(c => !this.deletedClientIds.has(c.cliente_id)),
+      pagamentos: INITIAL_PAGAMENTOS.filter(p => !this.deletedClientIds.has(p.cliente_id)),
       historico_vencimentos: [],
-      promessas: INITIAL_PROMESSAS,
+      promessas: INITIAL_PROMESSAS.filter(p => !this.deletedClientIds.has(p.cliente_id)),
       contatos: [],
-      bonus: INITIAL_BONUS,
+      bonus: INITIAL_BONUS.filter(b => !this.deletedClientIds.has(b.cliente_id) && (!b.indicado_id || !this.deletedClientIds.has(b.indicado_id))),
       programas_bonus: INITIAL_PROGRAMAS_BONUS,
       categorias_despesas: INITIAL_CATEGORIAS,
-      despesas: INITIAL_DESPESAS,
-      fluxo_caixa: INITIAL_FLUXO,
+      despesas: INITIAL_DESPESAS.filter(d => !this.deletedDespesaIds.has(d.id)),
+      fluxo_caixa: INITIAL_FLUXO.filter(f => (!f.cliente_id || !this.deletedClientIds.has(f.cliente_id)) && (!f.origem_id || !this.deletedDespesaIds.has(f.origem_id))),
       usuarios: INITIAL_USERS,
       logs_auditoria: INITIAL_AUDIT_LOGS,
       modelos_mensagem: INITIAL_MODELOS_MENSAGEM,
+      clientes_excluidos: Array.from(this.deletedClientIds),
+      despesas_excluidas: Array.from(this.deletedDespesaIds),
     };
   }
 
@@ -903,21 +578,85 @@ export class TotusDBManager {
   public async pushToSupabase(table: string, payload: any, mode: 'upsert' | 'insert' | 'update' | 'delete' = 'upsert', matchKey?: string, matchVal?: any) {
     if (!isSupabaseConfigured || !supabase) return;
     try {
+      // Bloqueio de inserção/atualização de itens excluídos
+      if (mode !== 'delete') {
+        if (table === 'clientes' && payload?.id && this.deletedClientIds.has(payload.id)) {
+          return;
+        }
+        if (table === 'despesas' && payload?.id && this.deletedDespesaIds.has(payload.id)) {
+          return;
+        }
+        if (['cobrancas', 'pagamentos', 'fluxo_caixa', 'bonus_beneficios', 'promessas_pagamento', 'contatos_historico', 'historico_vencimentos'].includes(table)) {
+          if (payload?.cliente_id && this.deletedClientIds.has(payload.cliente_id)) {
+            return;
+          }
+        }
+        if (table === 'fluxo_caixa' && payload?.origem_id && this.deletedDespesaIds.has(payload.origem_id)) {
+          return;
+        }
+      }
+
+      // Sanitização de campos do tipo DATE e foreign keys para evitar erro PostgreSQL de syntax inválida ("" -> null)
+      let sanitizedPayload = payload;
+      if (payload && typeof payload === 'object' && mode !== 'delete') {
+        sanitizedPayload = { ...payload };
+        if (table === 'clientes') {
+          if (sanitizedPayload.data_nascimento === '') sanitizedPayload.data_nascimento = null;
+          if (sanitizedPayload.data_inicio_servico === '') sanitizedPayload.data_inicio_servico = null;
+          if (sanitizedPayload.indicado_por === '') sanitizedPayload.indicado_por = null;
+          if (sanitizedPayload.reseller_id === '') sanitizedPayload.reseller_id = null;
+        }
+      }
+
       if (mode === 'delete' && matchKey && matchVal) {
         const { error } = await supabase.from(table).delete().eq(matchKey, matchVal);
         if (error) console.error(`[Supabase delete ${table}]`, error.message);
       } else if (mode === 'insert') {
-        const { error } = await supabase.from(table).insert(payload);
+        const { error } = await supabase.from(table).insert(sanitizedPayload);
         if (error) console.error(`[Supabase insert ${table}]`, error.message);
       } else if (mode === 'update' && matchKey && matchVal) {
-        const { error } = await supabase.from(table).update(payload).eq(matchKey, matchVal);
+        const { error } = await supabase.from(table).update(sanitizedPayload).eq(matchKey, matchVal);
         if (error) console.error(`[Supabase update ${table}]`, error.message);
       } else {
-        const { error } = await supabase.from(table).upsert(payload);
+        const { error } = await supabase.from(table).upsert(sanitizedPayload);
         if (error) console.error(`[Supabase upsert ${table}]`, error.message);
       }
     } catch (err) {
       console.warn(`[Supabase sync error ${table}]`, err);
+    }
+  }
+
+  public async purgeClientFromSupabase(clienteId: string) {
+    if (!isSupabaseConfigured || !supabase || !clienteId) return;
+    try {
+      // Cascata em ordem reversa de dependência relacional no PostgreSQL
+      await supabase.from('clientes').update({ indicado_por: null }).eq('indicado_por', clienteId);
+      await supabase.from('bonus_beneficios').delete().eq('cliente_id', clienteId);
+      await supabase.from('bonus_beneficios').delete().eq('indicado_id', clienteId);
+      await supabase.from('contatos_historico').delete().eq('cliente_id', clienteId);
+      await supabase.from('promessas_pagamento').delete().eq('cliente_id', clienteId);
+      await supabase.from('historico_vencimentos').delete().eq('cliente_id', clienteId);
+      await supabase.from('fluxo_caixa').delete().eq('cliente_id', clienteId);
+      await supabase.from('pagamentos').delete().eq('cliente_id', clienteId);
+      await supabase.from('cobrancas').delete().eq('cliente_id', clienteId);
+      const { error } = await supabase.from('clientes').delete().eq('id', clienteId);
+      if (error) {
+        console.error(`[Supabase delete cliente ${clienteId}]`, error.message);
+      }
+    } catch (err) {
+      console.warn(`[Supabase purge cliente ${clienteId} error]`, err);
+    }
+  }
+
+  public async purgeDespesaFromSupabase(despesaId: string) {
+    if (!isSupabaseConfigured || !supabase || !despesaId) return;
+    try {
+      await supabase.from('fluxo_caixa').delete().eq('origem_id', despesaId);
+      await supabase.from('fluxo_caixa').delete().eq('id', `flx-desp-${despesaId}`);
+      await supabase.from('fluxo_caixa').delete().eq('id', despesaId);
+      await supabase.from('despesas').delete().eq('id', despesaId);
+    } catch (err) {
+      console.warn(`[Supabase purge despesa ${despesaId} error]`, err);
     }
   }
 
@@ -957,79 +696,125 @@ export class TotusDBManager {
         this.db.config = { ...this.db.config, ...resConfig.data };
         updated = true;
       }
+
       if (resClientes.data && resClientes.data.length > 0) {
-        const cloudIds = new Set(resClientes.data.map((c: any) => c.id));
-        const localNew = this.db.clientes.filter(c => !cloudIds.has(c.id));
+        // Expurgar do Supabase qualquer cliente que esteja na lista de excluídos
+        const toPurge = resClientes.data.filter((c: any) => this.deletedClientIds.has(c.id));
+        for (const dc of toPurge) {
+          this.purgeClientFromSupabase(dc.id);
+        }
+
+        const activeCloud = resClientes.data.filter((c: any) => !this.deletedClientIds.has(c.id));
+        const cloudIds = new Set(activeCloud.map((c: any) => c.id));
+        const localNew = this.db.clientes.filter(c => !cloudIds.has(c.id) && !this.deletedClientIds.has(c.id));
         if (localNew.length > 0) {
           for (const lc of localNew) {
             this.pushToSupabase('clientes', lc);
           }
         }
-        this.db.clientes = [...resClientes.data, ...localNew];
+        this.db.clientes = [...activeCloud, ...localNew];
         updated = true;
       }
+
       if (resCobrancas.data && resCobrancas.data.length > 0) {
-        const cloudIds = new Set(resCobrancas.data.map((c: any) => c.id));
-        const localNew = this.db.cobrancas.filter(c => !cloudIds.has(c.id));
+        const activeCloud = resCobrancas.data.filter((c: any) => !this.deletedClientIds.has(c.cliente_id));
+        const cloudIds = new Set(activeCloud.map((c: any) => c.id));
+        const localNew = this.db.cobrancas.filter(c => !cloudIds.has(c.id) && !this.deletedClientIds.has(c.cliente_id));
         if (localNew.length > 0) {
           for (const lc of localNew) {
             this.pushToSupabase('cobrancas', lc);
           }
         }
-        this.db.cobrancas = [...resCobrancas.data, ...localNew];
+        this.db.cobrancas = [...activeCloud, ...localNew];
         updated = true;
       }
+
       if (resPagamentos.data && resPagamentos.data.length > 0) {
-        const cloudIds = new Set(resPagamentos.data.map((p: any) => p.id));
-        const localNew = this.db.pagamentos.filter(p => !cloudIds.has(p.id));
+        const activeCloud = resPagamentos.data.filter((p: any) => !this.deletedClientIds.has(p.cliente_id));
+        const cloudIds = new Set(activeCloud.map((p: any) => p.id));
+        const localNew = this.db.pagamentos.filter(p => !cloudIds.has(p.id) && !this.deletedClientIds.has(p.cliente_id));
         if (localNew.length > 0) {
           for (const lp of localNew) {
             this.pushToSupabase('pagamentos', lp);
           }
         }
-        this.db.pagamentos = [...resPagamentos.data, ...localNew];
+        this.db.pagamentos = [...activeCloud, ...localNew];
         updated = true;
       }
+
       if (resDespesas.data && resDespesas.data.length > 0) {
-        const cloudIds = new Set(resDespesas.data.map((d: any) => d.id));
-        const localNew = this.db.despesas.filter(d => !cloudIds.has(d.id));
+        const toPurge = resDespesas.data.filter((d: any) => this.deletedDespesaIds.has(d.id));
+        for (const dd of toPurge) {
+          this.purgeDespesaFromSupabase(dd.id);
+        }
+
+        const activeCloud = resDespesas.data.filter((d: any) => !this.deletedDespesaIds.has(d.id));
+        const cloudIds = new Set(activeCloud.map((d: any) => d.id));
+        const localNew = this.db.despesas.filter(d => !cloudIds.has(d.id) && !this.deletedDespesaIds.has(d.id));
         if (localNew.length > 0) {
           for (const ld of localNew) {
             this.pushToSupabase('despesas', ld);
           }
         }
-        this.db.despesas = [...resDespesas.data, ...localNew];
+        this.db.despesas = [...activeCloud, ...localNew];
         updated = true;
       }
+
       if (resCategorias.data && resCategorias.data.length > 0) {
         this.db.categorias_despesas = resCategorias.data;
         updated = true;
       }
+
       if (resFluxo.data && resFluxo.data.length > 0) {
+        const testClientNames = ['Marcos Vinicius', 'Mariana Silveira', 'Carlos Eduardo Mendes', 'Juliana Beatriz', 'Fernanda Cristina', 'Rodrigo Barbosa', 'Lucas Gabriel', 'Patrícia Helena'];
+        const testFluxoIds = new Set(['flx-1', 'flx-2', 'flx-3', 'flx-4', 'flx-5', 'flx-set-1', 'flx-set-2', 'flx-set-3', 'flx-set-4', 'flx-set-5', 'flx-set-6', 'flx-set-7']);
+
         const validDespesaIds = new Set(this.db.despesas.map(d => d.id));
         const filteredCloudFluxo = resFluxo.data.filter((f: any) => {
-          if (f.origem === 'despesa_paga' && f.origem_id && !validDespesaIds.has(f.origem_id)) {
+          if (!f || !f.id) return false;
+          if (testFluxoIds.has(f.id) || f.id.startsWith('flx-set-')) return false;
+          if (testClientNames.some(nome => f.descricao && f.descricao.includes(nome))) return false;
+          if (f.cliente_id && this.deletedClientIds.has(f.cliente_id)) {
             return false;
+          }
+          if (f.origem === 'despesa_paga' && f.origem_id) {
+            if (this.deletedDespesaIds.has(f.origem_id) || !validDespesaIds.has(f.origem_id)) {
+              return false;
+            }
           }
           return true;
         });
         const cloudIds = new Set(filteredCloudFluxo.map((f: any) => f.id));
-        const localNew = this.db.fluxo_caixa.filter(f => !cloudIds.has(f.id));
+        const localNew = this.db.fluxo_caixa.filter(f => 
+          !cloudIds.has(f.id) && 
+          !testFluxoIds.has(f.id) &&
+          !f.id.startsWith('flx-set-') &&
+          !testClientNames.some(nome => f.descricao && f.descricao.includes(nome)) &&
+          (!f.cliente_id || !this.deletedClientIds.has(f.cliente_id)) && 
+          (!f.origem_id || !this.deletedDespesaIds.has(f.origem_id))
+        );
         this.db.fluxo_caixa = [...filteredCloudFluxo, ...localNew];
         updated = true;
       }
+
       if (resBonus.data && resBonus.data.length > 0) {
-        this.db.bonus = resBonus.data;
+        this.db.bonus = resBonus.data.filter((b: any) => 
+          !this.deletedClientIds.has(b.cliente_id) && 
+          (!b.indicado_id || !this.deletedClientIds.has(b.indicado_id))
+        );
         updated = true;
       }
+
       if (resProgramas.data && resProgramas.data.length > 0) {
         this.db.programas_bonus = resProgramas.data;
         updated = true;
       }
+
       if (resPerfis.data && resPerfis.data.length > 0) {
         this.db.usuarios = resPerfis.data;
         updated = true;
       }
+
       if (resAuditoria.data && resAuditoria.data.length > 0) {
         this.db.logs_auditoria = resAuditoria.data;
         updated = true;
@@ -1038,6 +823,7 @@ export class TotusDBManager {
       if (updated) {
         this.persist();
       }
+      this.reconciliarClientesExcluidos();
       this.reconciliarFluxoDespesas();
       return true;
     } catch (e) {
@@ -1079,6 +865,11 @@ export class TotusDBManager {
     const isEdit = Boolean(data.id);
     const id = data.id || `cli-${Date.now()}`;
     const now = new Date().toISOString();
+
+    // Se estiver re-salvando ou recriando cliente com este ID, desmarcar de excluídos
+    if (data.id) {
+      this.unregisterDeletedClientId(data.id);
+    }
 
     let cliente: Cliente;
 
@@ -1127,6 +918,7 @@ export class TotusDBManager {
         created_at: now,
         updated_at: now,
       };
+      this.unregisterDeletedClientId(cliente.id);
       this.db.clientes.push(cliente);
 
       // Se tiver indicado_por, gerar bônus pendente para o padrinho
@@ -1189,31 +981,37 @@ export class TotusDBManager {
   }
 
   public excluirCliente(clienteId: string) {
+    if (!clienteId) return;
+
+    // 1. Gravar permanentemente na lista de clientes excluídos
+    this.registerDeletedClientId(clienteId);
+
+    // 2. Remover do array de clientes
     const idx = this.db.clientes.findIndex(c => c.id === clienteId);
-    if (idx === -1) return;
+    if (idx !== -1) {
+      this.db.clientes.splice(idx, 1);
+    }
 
-    this.db.clientes.splice(idx, 1);
-
-    // 1. Cobranças do cliente
+    // 3. Cobranças do cliente
     const cobrancasRemovidas = this.db.cobrancas.filter(c => c.cliente_id === clienteId);
     const cobrancasIds = new Set(cobrancasRemovidas.map(c => c.id));
     this.db.cobrancas = this.db.cobrancas.filter(c => c.cliente_id !== clienteId);
 
-    // 2. Pagamentos vinculados
+    // 4. Pagamentos vinculados
     this.db.pagamentos = this.db.pagamentos.filter(p => p.cliente_id !== clienteId && !cobrancasIds.has(p.cobranca_id));
 
-    // 3. Entradas do fluxo de caixa originadas desses pagamentos ou do cliente
+    // 5. Entradas do fluxo de caixa originadas desses pagamentos ou do cliente
     this.db.fluxo_caixa = this.db.fluxo_caixa.filter(f => f.cliente_id !== clienteId && (!f.origem_id || !cobrancasIds.has(f.origem_id)));
 
-    // 4. Bônus onde o cliente é o beneficiário ou foi indicado
+    // 6. Bônus onde o cliente é o beneficiário ou foi indicado
     this.db.bonus = this.db.bonus.filter(b => b.cliente_id !== clienteId && b.indicado_id !== clienteId);
 
-    // 5. Histórico de vencimentos, promessas e contatos
+    // 7. Histórico de vencimentos, promessas e contatos
     this.db.historico_vencimentos = (this.db.historico_vencimentos || []).filter(h => h.cliente_id !== clienteId);
     this.db.promessas = (this.db.promessas || []).filter(p => p.cliente_id !== clienteId);
     this.db.contatos = (this.db.contatos || []).filter(c => c.cliente_id !== clienteId);
 
-    // 6. Atualizar outros clientes que tinham este como padrinho
+    // 8. Atualizar outros clientes que tinham este como padrinho
     this.db.clientes.forEach(c => {
       if (c.indicado_por === clienteId) {
         c.indicado_por = undefined;
@@ -1222,12 +1020,8 @@ export class TotusDBManager {
 
     this.persist();
 
-    // Sincronizar exclusão com Supabase
-    this.pushToSupabase('clientes', { id: clienteId }, 'delete', 'id', clienteId);
-    this.pushToSupabase('cobrancas', { cliente_id: clienteId }, 'delete', 'cliente_id', clienteId);
-    this.pushToSupabase('pagamentos', { cliente_id: clienteId }, 'delete', 'cliente_id', clienteId);
-    this.pushToSupabase('bonus_beneficios', { cliente_id: clienteId }, 'delete', 'cliente_id', clienteId);
-    this.pushToSupabase('bonus_beneficios', { indicado_id: clienteId }, 'delete', 'indicado_id', clienteId);
+    // 9. Expurgar da nuvem Supabase em cascata segura
+    this.purgeClientFromSupabase(clienteId);
   }
 
   // ----------------------------------------------------------------------------
@@ -1796,6 +1590,8 @@ export class TotusDBManager {
     const isEdit = Boolean(params.id);
     const id = params.id || `desp-${Date.now()}`;
 
+    this.unregisterDeletedDespesaId(id);
+
     let despesa: Despesa;
 
     if (isEdit) {
@@ -1924,6 +1720,9 @@ export class TotusDBManager {
   }
 
   public excluirDespesa(despesaId: string) {
+    if (!despesaId) return;
+    this.registerDeletedDespesaId(despesaId);
+
     const idx = this.db.despesas.findIndex(d => d.id === despesaId);
     let despDescricao = '';
     if (idx !== -1) {
@@ -1954,8 +1753,7 @@ export class TotusDBManager {
     });
 
     this.persist();
-    this.pushToSupabase('despesas', { id: despesaId }, 'delete', 'id', despesaId);
-    this.pushToSupabase('fluxo_caixa', { origem_id: despesaId }, 'delete', 'origem_id', despesaId);
+    this.purgeDespesaFromSupabase(despesaId);
     flxIdsToRemove.forEach(id => {
       this.pushToSupabase('fluxo_caixa', { id }, 'delete', 'id', id);
     });
@@ -1969,11 +1767,12 @@ export class TotusDBManager {
 
     // Se tiver despesa vinculada, remove também de despesas
     if (item.origem_id) {
+      this.registerDeletedDespesaId(item.origem_id);
       const despIdx = this.db.despesas.findIndex(d => d.id === item.origem_id);
       if (despIdx !== -1) {
         this.db.despesas.splice(despIdx, 1);
-        this.pushToSupabase('despesas', { id: item.origem_id }, 'delete', 'id', item.origem_id);
       }
+      this.purgeDespesaFromSupabase(item.origem_id);
     }
 
     this.persist();
@@ -2243,3 +2042,6 @@ export class TotusDBManager {
 
 // Instância singleton pronta para uso em toda a aplicação
 export const totusDB = new TotusDBManager();
+if (typeof window !== 'undefined') {
+  (window as any).totusDB = totusDB;
+}

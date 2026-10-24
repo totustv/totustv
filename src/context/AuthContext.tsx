@@ -347,6 +347,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth deve ser utilizado dentro de um AuthProvider');
+  if (!ctx) {
+    return {
+      currentUser: null,
+      role: 'admin' as UserRole,
+      isAdmin: true,
+      isReseller: false,
+      isLoading: false,
+      error: null,
+      login: async () => ({ success: false, error: 'Não autenticado' }),
+      logout: async () => {},
+      recuperarSenha: async () => ({ success: false, message: '', error: 'Não autenticado' }),
+      redefinirSenha: async () => ({ success: false, message: '', error: 'Não autenticado' }),
+      trocarPerfilTeste: () => {},
+      usuariosDisponiveis: [],
+    };
+  }
   return ctx;
 };

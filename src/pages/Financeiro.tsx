@@ -355,37 +355,33 @@ export const FinanceiroPage: React.FC<FinanceiroPageProps> = ({ onEditDespesa })
                         </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        {isDespesa ? (
-                          <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'center' }}>
-                            {desp && onEditDespesa && (
-                              <button
-                                className="btn btn-secondary btn-sm btn-icon"
-                                title="Editar despesa"
-                                onClick={() => onEditDespesa(desp)}
-                              >
-                                <Pencil size={14} />
-                              </button>
-                            )}
+                        <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'center' }}>
+                          {isDespesa && desp && onEditDespesa && (
                             <button
                               className="btn btn-secondary btn-sm btn-icon"
-                              title="Excluir despesa do Livro Caixa"
-                              style={{ color: 'var(--accent-rose)' }}
-                              onClick={() => {
-                                const nome = desp ? desp.descricao : item.descricao;
-                                if (window.confirm(`Tem certeza que deseja excluir "${nome}"? Ela será removida permanentemente do Livro Caixa.`)) {
-                                  excluirItemFluxoCaixa(item.id);
-                                  if (item.origem_id) {
-                                    excluirDespesa(item.origem_id);
-                                  }
-                                }
-                              }}
+                              title="Editar despesa"
+                              onClick={() => onEditDespesa(desp)}
                             >
-                              <Trash2 size={14} />
+                              <Pencil size={14} />
                             </button>
-                          </div>
-                        ) : (
-                          <span style={{ color: 'var(--text-subtle)', fontSize: '0.8rem' }}>—</span>
-                        )}
+                          )}
+                          <button
+                            className="btn btn-secondary btn-sm btn-icon"
+                            title="Excluir do Livro Caixa"
+                            style={{ color: 'var(--accent-rose)' }}
+                            onClick={() => {
+                              const nome = isDespesa && desp ? desp.descricao : item.descricao;
+                              if (window.confirm(`Tem certeza que deseja excluir "${nome}"? O registro será removido permanentemente do Livro Caixa.`)) {
+                                excluirItemFluxoCaixa(item.id);
+                                if (isDespesa && item.origem_id) {
+                                  excluirDespesa(item.origem_id);
+                                }
+                              }
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

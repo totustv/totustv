@@ -74,11 +74,13 @@ export const ConcederBonusModal: React.FC<ConcederBonusModalProps> = ({
               onChange={e => setClienteId(e.target.value)}
               required
             >
-              {clientes.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.nome} (Venc. dia {c.dia_vencimento})
-                </option>
-              ))}
+              {[...clientes]
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }))
+                .map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome} (Venc. dia {c.dia_vencimento})
+                  </option>
+                ))}
             </select>
           </div>
 

@@ -73,30 +73,32 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
     });
   }, [clientes, cobrancas, bonus, promessas]);
 
-  // Filtragem
+  // Filtragem e Ordenação Alfabética (A-Z)
   const clientesFiltrados = useMemo(() => {
-    return clientesComDados.filter(({ cli, cobrancaAtual, possuiBonus, promessaAtiva }) => {
-      // 1. Busca textual
-      const query = busca.toLowerCase().trim();
-      if (query) {
-        const matchNome = cli.nome.toLowerCase().includes(query);
-        const matchTel = cli.whatsapp.includes(query);
-        const matchCidade = cli.cidade ? cli.cidade.toLowerCase().includes(query) : false;
-        const matchEstado = cli.estado ? cli.estado.toLowerCase().includes(query) : false;
-        const matchPais = cli.pais ? cli.pais.toLowerCase().includes(query) : false;
-        const padrinho = cli.indicado_por ? clientes.find(c => c.id === cli.indicado_por) : null;
-        const matchPadrinho = padrinho ? padrinho.nome.toLowerCase().includes(query) : false;
-        if (!matchNome && !matchTel && !matchCidade && !matchEstado && !matchPais && !matchPadrinho) return false;
-      }
+    return clientesComDados
+      .filter(({ cli }) => {
+        // 1. Busca textual
+        const query = busca.toLowerCase().trim();
+        if (query) {
+          const matchNome = cli.nome.toLowerCase().includes(query);
+          const matchTel = cli.whatsapp.includes(query);
+          const matchCidade = cli.cidade ? cli.cidade.toLowerCase().includes(query) : false;
+          const matchEstado = cli.estado ? cli.estado.toLowerCase().includes(query) : false;
+          const matchPais = cli.pais ? cli.pais.toLowerCase().includes(query) : false;
+          const padrinho = cli.indicado_por ? clientes.find(c => c.id === cli.indicado_por) : null;
+          const matchPadrinho = padrinho ? padrinho.nome.toLowerCase().includes(query) : false;
+          if (!matchNome && !matchTel && !matchCidade && !matchEstado && !matchPais && !matchPadrinho) return false;
+        }
 
-      // 2. Filtro Rápido
-      if (filtroRapido === 'ativos') return cli.status === 'ativo';
-      if (filtroRapido === 'inativos') return cli.status === 'inativo';
-      if (filtroRapido === 'com_indicacao') return Boolean(cli.indicado_por);
-      if (filtroRapido === 'diretos') return !cli.indicado_por;
+        // 2. Filtro Rápido
+        if (filtroRapido === 'ativos') return cli.status === 'ativo';
+        if (filtroRapido === 'inativos') return cli.status === 'inativo';
+        if (filtroRapido === 'com_indicacao') return Boolean(cli.indicado_por);
+        if (filtroRapido === 'diretos') return !cli.indicado_por;
 
-      return true;
-    });
+        return true;
+      })
+      .sort((a, b) => a.cli.nome.localeCompare(b.cli.nome, 'pt-BR', { sensitivity: 'base' }));
   }, [clientesComDados, busca, filtroRapido, clientes]);
 
   return (
