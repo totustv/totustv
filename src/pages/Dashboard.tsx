@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Users,
   CreditCard,
@@ -32,6 +32,7 @@ import {
 } from 'recharts';
 import { useTotus } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { Cliente, Cobranca } from '../types';
 import { formatCurrency, formatDate, cleanWhatsAppNumber, isToday, isTomorrow, isPastDate, formatStatusBadge } from '../lib/utils';
 import confetti from 'canvas-confetti';
 
@@ -91,7 +92,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   ];
 
   // Dados para Gráfico de Distribuição de Cobranças
-  const cobrancasDoMes = cobrancas.filter(c => c.competencia_mes === 10 && c.competencia_ano === 2026);
+  const nowDashboard = new Date();
+  const currentMonthDashboard = nowDashboard.getMonth() + 1;
+  const currentYearDashboard = nowDashboard.getFullYear();
+  const cobrancasDoMes = cobrancas.filter(c => c.competencia_mes === currentMonthDashboard && c.competencia_ano === currentYearDashboard);
   const statusCounts = {
     Pagas: cobrancasDoMes.filter(c => c.status === 'pago').length,
     Pendentes: cobrancasDoMes.filter(c => c.status === 'pendente' || c.status === 'avisado').length,
@@ -108,16 +112,44 @@ export const Dashboard: React.FC<DashboardProps> = ({
     { name: 'Bônus/Aniv', value: statusCounts.Dispensadas, color: '#ec4899' },
   ].filter(d => d.value > 0);
 
-  // Ações Necessárias Hoje: Cobranças vencendo hoje, atrasadas, ou promessas vencendo
-  const acoesNecessarias = cobrancas
-    .filter(c => {
-      if (c.status === 'pago' || c.status === 'cancelado' || c.status.startsWith('dispensado')) return false;
-      return isToday(c.data_vencimento) || isTomorrow(c.data_vencimento) || c.status === 'atrasado' || c.status === 'prometeu_pagar';
-    })
-    .map(cob => {
-      const cli = clientes.find(c => c.id === cob.cliente_id);
-      return { cob, cli };
-    });
+  // Ações Necessárias Hoje: Cobranças vencendo hoje, atrasadas, ou promessas vencendo (1 linha por cliente)
+  const acoesNecessarias: { cob: Cobranca; cli: Cliente }[] = useMemo(() => {
+    const raw: { cob: Cobranca; cli: Cliente }[] = [];
+    for (const c of cobrancas) {
+      if (c.status === 'pago' || c.status === 'cancelado' || c.status.startsWith('dispensado')) continue;
+      if (!isToday(c.data_vencimento) && !isTomorrow(c.data_vencimento) && c.status !== 'atrasado' && c.status !== 'prometeu_pagar') continue;
+
+      const cli = clientes.find(item => item.id === c.cliente_id);
+      if (!cli) continue;
+
+      // Respeitar rigorosamente a Data de Início do Serviço: faturas anteriores ao início não entram em ações
+      if (cli.data_inicio_servico) {
+        const [anoInicio, mesInicio] = cli.data_inicio_servico.split('-').map(Number);
+        if (anoInicio && mesInicio) {
+          if (c.competencia_ano < anoInicio || (c.competencia_ano === anoInicio && c.competencia_mes < mesInicio)) {
+            continue;
+          }
+        }
+      }
+
+      raw.push({ cob: c, cli });
+    }
+
+    // DEDUPLICAÇÃO RÍGIDA POR CLIENTE: Um cliente nunca pode aparecer mais de uma vez na lista
+    const clientMap = new Map<string, { cob: Cobranca; cli: Cliente }>();
+    for (const item of raw) {
+      if (!clientMap.has(item.cli.id)) {
+        clientMap.set(item.cli.id, item);
+      } else {
+        // Priorizar a cobrança com vencimento mais urgente / antigo
+        const current = clientMap.get(item.cli.id)!;
+        if (item.cob.data_vencimento < current.cob.data_vencimento) {
+          clientMap.set(item.cli.id, item);
+        }
+      }
+    }
+    return Array.from(clientMap.values());
+  }, [cobrancas, clientes]);
 
   const dispararConfetti = () => {
     confetti({

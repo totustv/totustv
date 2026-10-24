@@ -47,9 +47,16 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
     'todos' | 'ativos' | 'inativos' | 'com_indicacao' | 'diretos'
   >('todos');
 
-  // Relacionar cada cliente com a sua cobrança mais recente/ativa
+  // Relacionar cada cliente com a sua cobrança mais recente/ativa (garantindo unicidade de cliente)
   const clientesComDados = useMemo(() => {
-    return clientes.map(cli => {
+    const uniqueClients = new Map<string, typeof clientes[0]>();
+    for (const c of clientes) {
+      if (c && c.id && !uniqueClients.has(c.id)) {
+        uniqueClients.set(c.id, c);
+      }
+    }
+
+    return Array.from(uniqueClients.values()).map(cli => {
       // Pega cobranças do cliente ordenadas por competência decrescente
       const cobs = cobrancas
         .filter(c => c.cliente_id === cli.id)
@@ -338,9 +345,17 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
 
                         {/* Excluir Cliente */}
                         <button
-                          onClick={() => {
-                            if (window.confirm(`Tem certeza que deseja excluir o cliente "${cli.nome}"? Todas as faturas e registros vinculados serão removidos.`)) {
-                              excluirCliente(cli.id);
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            if (window.confirm(`Tem certeza que deseja excluir o cliente "${cli.nome}"? Todas as faturas e registros vinculados serão removidos permanentemente.`)) {
+                              try {
+                                excluirCliente(cli.id);
+                              } catch (err: any) {
+                                console.error('Erro ao excluir cliente:', err);
+                                alert(err?.message || 'Erro ao excluir cliente');
+                              }
                             }
                           }}
                           className="btn btn-secondary btn-sm btn-icon"

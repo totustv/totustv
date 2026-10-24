@@ -144,7 +144,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isReseller && currentUser) {
       return rawData.clientes.filter(c => c.reseller_id === currentUser.id);
     }
-    return [];
+    return rawData.clientes;
   }, [rawData.clientes, isAdmin, isReseller, currentUser]);
 
   const clienteIdsPermitidos = useMemo(() => {
@@ -377,36 +377,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return saved;
         },
         toggleStatusCliente: (id) => {
-          if (!clienteIdsPermitidos.has(id) && !isAdmin) {
-            throw new Error('Permissão negada: este cliente não pertence à sua carteira');
+          if (isReseller && currentUser && !isAdmin && !clienteIdsPermitidos.has(id)) {
+            alert('Permissão negada: este cliente não pertence à sua carteira');
+            return;
           }
-          const cli = totusDB.getClienteById(id);
-          const novoStatus = totusDB.toggleClienteStatus(id);
-          totusDB.registrarLogAuditoria({
-            user_id: currentUser?.id || 'anon',
-            user_nome: currentUser?.nome || 'Usuário',
-            user_email: currentUser?.email || '',
-            acao: novoStatus === 'ativo' ? 'ativar_cliente' : 'inativar_cliente',
-            tabela: 'clientes',
-            registro_id: id,
-            detalhes: `Status do cliente ${cli?.nome || id} alterado para ${novoStatus.toUpperCase()}`,
-          });
+          try {
+            const cli = totusDB.getClienteById(id);
+            const novoStatus = totusDB.toggleClienteStatus(id);
+            totusDB.registrarLogAuditoria({
+              user_id: currentUser?.id || 'anon',
+              user_nome: currentUser?.nome || 'Usuário',
+              user_email: currentUser?.email || '',
+              acao: novoStatus === 'ativo' ? 'ativar_cliente' : 'inativar_cliente',
+              tabela: 'clientes',
+              registro_id: id,
+              detalhes: `Status do cliente ${cli?.nome || id} alterado para ${novoStatus.toUpperCase()}`,
+            });
+          } catch (err) {
+            console.error('Erro ao alterar status do cliente:', err);
+          }
         },
         excluirCliente: (id) => {
-          if (!clienteIdsPermitidos.has(id) && !isAdmin) {
-            throw new Error('Permissão negada: este cliente não pertence à sua carteira');
+          if (isReseller && currentUser && !isAdmin && !clienteIdsPermitidos.has(id)) {
+            alert('Permissão negada: este cliente não pertence à sua carteira');
+            return;
           }
-          const cli = totusDB.getClienteById(id);
-          totusDB.excluirCliente(id);
-          totusDB.registrarLogAuditoria({
-            user_id: currentUser?.id || 'anon',
-            user_nome: currentUser?.nome || 'Usuário',
-            user_email: currentUser?.email || '',
-            acao: 'excluir_cliente',
-            tabela: 'clientes',
-            registro_id: id,
-            detalhes: `Exclusão permanente do cliente ${cli?.nome || id} (${cli?.whatsapp || ''})`,
-          });
+          try {
+            const cli = totusDB.getClienteById(id);
+            totusDB.excluirCliente(id);
+            totusDB.registrarLogAuditoria({
+              user_id: currentUser?.id || 'anon',
+              user_nome: currentUser?.nome || 'Usuário',
+              user_email: currentUser?.email || '',
+              acao: 'excluir_cliente',
+              tabela: 'clientes',
+              registro_id: id,
+              detalhes: `Exclusão permanente do cliente ${cli?.nome || id} (${cli?.whatsapp || ''})`,
+            });
+          } catch (err) {
+            console.error('Erro ao excluir cliente:', err);
+          }
         },
         transferirCliente: (clienteId, novoResellerId, motivo) => {
           if (!isAdmin) {

@@ -32,6 +32,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async function initSession() {
       setIsLoading(true);
 
+      const carregarUsuarioLocal = () => {
+        try {
+          const savedUserId = localStorage.getItem(AUTH_STORAGE_KEY);
+          const allUsers = totusDB.getUsuarios();
+          if (savedUserId) {
+            const found = allUsers.find(u => u.id === savedUserId);
+            if (found) {
+              if (found.status === 'suspenso') {
+                localStorage.removeItem(AUTH_STORAGE_KEY);
+                setCurrentUser(null);
+                setError('Sua conta está suspensa pelo administrador.');
+              } else {
+                setCurrentUser(found);
+              }
+              return;
+            }
+          }
+          // Usuário default inicial: Admin
+          const defaultAdmin = allUsers[0] || INITIAL_USERS[0];
+          setCurrentUser(defaultAdmin);
+          localStorage.setItem(AUTH_STORAGE_KEY, defaultAdmin.id);
+        } catch (e) {
+          console.warn('Erro ao carregar sessão local:', e);
+          const defaultAdmin = INITIAL_USERS[0];
+          setCurrentUser(defaultAdmin);
+        }
+      };
+
       if (isSupabaseConfigured && supabase) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
@@ -57,46 +85,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 id: session.user.id,
                 email: session.user.email || '',
                 nome: session.user.user_metadata?.nome || session.user.email?.split('@')[0] || 'Usuário',
-                role: (session.user.user_metadata?.role as UserRole) || 'reseller',
+                role: (session.user.user_metadata?.role as UserRole) || 'admin',
                 status: 'ativo',
                 created_at: session.user.created_at,
               };
               setCurrentUser(fallbackProfile);
             }
+          } else {
+            // Sem sessão ativa no Supabase Auth: carrega perfil local (Admin padrão)
+            carregarUsuarioLocal();
           }
         } catch (err) {
           console.error('Erro na sessão Supabase:', err);
+          carregarUsuarioLocal();
         }
       } else {
         // Fallback local autenticado
-        try {
-          const savedUserId = localStorage.getItem(AUTH_STORAGE_KEY);
-          const allUsers = totusDB.getUsuarios();
-          if (savedUserId) {
-            const found = allUsers.find(u => u.id === savedUserId);
-            if (found) {
-              if (found.status === 'suspenso') {
-                localStorage.removeItem(AUTH_STORAGE_KEY);
-                setCurrentUser(null);
-                setError('Sua conta está suspensa pelo administrador.');
-              } else {
-                setCurrentUser(found);
-              }
-            } else {
-              // Usuário default inicial: Admin
-              const defaultAdmin = allUsers[0] || INITIAL_USERS[0];
-              setCurrentUser(defaultAdmin);
-              localStorage.setItem(AUTH_STORAGE_KEY, defaultAdmin.id);
-            }
-          } else {
-            // Inicia logado como Admin para conveniência e teste imediato
-            const defaultAdmin = allUsers[0] || INITIAL_USERS[0];
-            setCurrentUser(defaultAdmin);
-            localStorage.setItem(AUTH_STORAGE_KEY, defaultAdmin.id);
-          }
-        } catch (e) {
-          console.warn('Erro ao carregar sessão local:', e);
-        }
+        carregarUsuarioLocal();
       }
 
       setIsLoading(false);
@@ -319,9 +324,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return totusDB.getUsuarios();
   }, [currentUser]);
 
-  const role: UserRole = currentUser?.role || 'reseller';
-  const isAdmin = role === 'admin';
-  const isReseller = role === 'reseller';
+  const role: UserRole = currentUser?.role || 'admin';
+  const isAdmin = !currentUser || role === 'admin';
+  const isReseller = currentUser ? role === 'reseller' : false;
 
   return (
     <AuthContext.Provider

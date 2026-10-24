@@ -242,6 +242,8 @@ export class TotusDBManager {
     this.autoCalculateAtrasos();
     this.reconciliarFluxoDespesas();
     this.reconciliarClientesExcluidos();
+    this.reconciliarTodasCobrancasAoInicioServico();
+    this.deduplicarCobrancas();
   }
 
   private loadDeletedIds(): void {
@@ -396,6 +398,140 @@ export class TotusDBManager {
     }
   }
 
+  public getCompetenciaInicialCliente(cliente: { data_inicio_servico?: string }): { mes: number; ano: number } {
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1;
+    const currentYear = today.getFullYear();
+
+    if (!cliente.data_inicio_servico) {
+      return { mes: currentMonth, ano: currentYear };
+    }
+
+    const parts = cliente.data_inicio_servico.split('-');
+    if (parts.length >= 2) {
+      const ano = parseInt(parts[0], 10);
+      const mes = parseInt(parts[1], 10);
+      if (!isNaN(ano) && !isNaN(mes) && mes >= 1 && mes <= 12 && ano >= 2000) {
+        return { mes, ano };
+      }
+    }
+
+    return { mes: currentMonth, ano: currentYear };
+  }
+
+  public ajustarCobrancasAoInicioDoServico(cliente: Cliente, mesInicio: number, anoInicio: number) {
+    if (!cliente || !cliente.id) return;
+
+    // 1. Remover cobranças não pagas geradas para competências anteriores ao início do serviço
+    const cobrancasPrematuras = this.db.cobrancas.filter(c =>
+      c.cliente_id === cliente.id &&
+      c.status !== 'pago' &&
+      (c.competencia_ano < anoInicio || (c.competencia_ano === anoInicio && c.competencia_mes < mesInicio))
+    );
+
+    if (cobrancasPrematuras.length > 0) {
+      const idsToRemove = new Set(cobrancasPrematuras.map(c => c.id));
+      this.db.cobrancas = this.db.cobrancas.filter(c => !idsToRemove.has(c.id));
+      for (const cob of cobrancasPrematuras) {
+        this.pushToSupabase('cobrancas', null, 'delete', 'id', cob.id);
+      }
+      this.persist();
+    }
+
+    // 2. Garantir que a cobrança da competência de início exista
+    const cobrancaInicio = this.db.cobrancas.find(c =>
+      c.cliente_id === cliente.id &&
+      c.competencia_mes === mesInicio &&
+      c.competencia_ano === anoInicio
+    );
+
+    if (!cobrancaInicio) {
+      this.gerarCobrancaParaCliente(cliente, mesInicio, anoInicio);
+    }
+  }
+
+  public reconciliarTodasCobrancasAoInicioServico(): boolean {
+    if (!this.db || !this.db.clientes || !this.db.cobrancas) return false;
+
+    let changed = false;
+    const clientMap = new Map<string, Cliente>();
+    this.db.clientes.forEach(c => clientMap.set(c.id, c));
+
+    // Identificar e remover cobranças prematuras não pagas
+    const prematureIds = new Set<string>();
+    for (const cob of this.db.cobrancas) {
+      if (cob.status === 'pago') continue;
+      const cli = clientMap.get(cob.cliente_id);
+      if (!cli || !cli.data_inicio_servico) continue;
+
+      const comp = this.getCompetenciaInicialCliente(cli);
+      if (cob.competencia_ano < comp.ano || (cob.competencia_ano === comp.ano && cob.competencia_mes < comp.mes)) {
+        prematureIds.add(cob.id);
+      }
+    }
+
+    if (prematureIds.size > 0) {
+      this.db.cobrancas = this.db.cobrancas.filter(c => !prematureIds.has(c.id));
+      for (const id of prematureIds) {
+        this.pushToSupabase('cobrancas', null, 'delete', 'id', id);
+      }
+      changed = true;
+    }
+
+    // Garantir que cada cliente ativo possua a cobrança de sua competência de início
+    for (const cli of this.db.clientes) {
+      if (cli.status === 'inativo') continue;
+      const comp = this.getCompetenciaInicialCliente(cli);
+      const hasCob = this.db.cobrancas.some(c =>
+        c.cliente_id === cli.id &&
+        c.competencia_mes === comp.mes &&
+        c.competencia_ano === comp.ano
+      );
+      if (!hasCob) {
+        this.gerarCobrancaParaCliente(cli, comp.mes, comp.ano);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.persist();
+    }
+    return changed;
+  }
+
+  public deduplicarCobrancas(): boolean {
+    if (!this.db || !this.db.cobrancas) return false;
+
+    const seen = new Map<string, Cobranca>();
+    const idsToRemove = new Set<string>();
+
+    for (const cob of this.db.cobrancas) {
+      if (!cob || !cob.cliente_id) continue;
+      const key = `${cob.cliente_id}-${cob.competencia_mes}-${cob.competencia_ano}`;
+      if (seen.has(key)) {
+        const existing = seen.get(key)!;
+        if (cob.status === 'pago' && existing.status !== 'pago') {
+          idsToRemove.add(existing.id);
+          seen.set(key, cob);
+        } else {
+          idsToRemove.add(cob.id);
+        }
+      } else {
+        seen.set(key, cob);
+      }
+    }
+
+    if (idsToRemove.size > 0) {
+      this.db.cobrancas = Array.from(seen.values());
+      for (const id of idsToRemove) {
+        this.pushToSupabase('cobrancas', null, 'delete', 'id', id);
+      }
+      this.persist();
+      return true;
+    }
+    return false;
+  }
+
   private loadFromStorage(): TotusDatabase {
     this.loadDeletedIds();
 
@@ -431,7 +567,24 @@ export class TotusDBManager {
           });
 
         const rawCobrancas: any[] = Array.isArray(parsed.cobrancas) ? parsed.cobrancas : INITIAL_COBRANCAS;
-        const validCobrancas = rawCobrancas.filter((c: any) => c && !this.deletedClientIds.has(c.cliente_id));
+        const cobMap = new Map<string, any>();
+        for (const c of rawCobrancas) {
+          if (!c || !c.cliente_id || this.deletedClientIds.has(c.cliente_id)) continue;
+          if (c.status !== 'pago') {
+            const cli = validClientes.find((cl: any) => cl.id === c.cliente_id);
+            if (cli && cli.data_inicio_servico) {
+              const [startAno, startMes] = cli.data_inicio_servico.split('-').map(Number);
+              if (startAno && startMes && (c.competencia_ano < startAno || (c.competencia_ano === startAno && c.competencia_mes < startMes))) {
+                continue;
+              }
+            }
+          }
+          const key = `${c.cliente_id}-${c.competencia_mes}-${c.competencia_ano}`;
+          if (!cobMap.has(key) || c.status === 'pago') {
+            cobMap.set(key, c);
+          }
+        }
+        const validCobrancas = Array.from(cobMap.values());
 
         const rawPagamentos: any[] = Array.isArray(parsed.pagamentos) ? parsed.pagamentos : INITIAL_PAGAMENTOS;
         const validPagamentos = rawPagamentos.filter((p: any) => p && !this.deletedClientIds.has(p.cliente_id));
@@ -717,15 +870,42 @@ export class TotusDBManager {
       }
 
       if (resCobrancas.data && resCobrancas.data.length > 0) {
-        const activeCloud = resCobrancas.data.filter((c: any) => !this.deletedClientIds.has(c.cliente_id));
-        const cloudIds = new Set(activeCloud.map((c: any) => c.id));
-        const localNew = this.db.cobrancas.filter(c => !cloudIds.has(c.id) && !this.deletedClientIds.has(c.cliente_id));
-        if (localNew.length > 0) {
-          for (const lc of localNew) {
+        const clientStartDates = new Map<string, { ano: number; mes: number }>();
+        this.db.clientes.forEach(c => {
+          clientStartDates.set(c.id, this.getCompetenciaInicialCliente(c));
+        });
+
+        const activeCloud = resCobrancas.data.filter((c: any) => {
+          if (!c || !c.cliente_id || this.deletedClientIds.has(c.cliente_id)) return false;
+          if (c.status !== 'pago') {
+            const start = clientStartDates.get(c.cliente_id);
+            if (start && (c.competencia_ano < start.ano || (c.competencia_ano === start.ano && c.competencia_mes < start.mes))) {
+              return false;
+            }
+          }
+          return true;
+        });
+
+        // Deduplicação estrita na nuvem por chave cliente + mês + ano
+        const cloudCobMap = new Map<string, any>();
+        for (const c of activeCloud) {
+          const key = `${c.cliente_id}-${c.competencia_mes}-${c.competencia_ano}`;
+          if (!cloudCobMap.has(key) || c.status === 'pago') {
+            cloudCobMap.set(key, c);
+          }
+        }
+
+        // Itens locais novos que NÃO existem na nuvem para essa competência
+        for (const lc of this.db.cobrancas) {
+          if (!lc || !lc.cliente_id || this.deletedClientIds.has(lc.cliente_id)) continue;
+          const key = `${lc.cliente_id}-${lc.competencia_mes}-${lc.competencia_ano}`;
+          if (!cloudCobMap.has(key)) {
+            cloudCobMap.set(key, lc);
             this.pushToSupabase('cobrancas', lc);
           }
         }
-        this.db.cobrancas = [...activeCloud, ...localNew];
+
+        this.db.cobrancas = Array.from(cloudCobMap.values());
         updated = true;
       }
 
@@ -825,6 +1005,8 @@ export class TotusDBManager {
       }
       this.reconciliarClientesExcluidos();
       this.reconciliarFluxoDespesas();
+      this.reconciliarTodasCobrancasAoInicioServico();
+      this.deduplicarCobrancas();
       return true;
     } catch (e) {
       console.warn('Erro ao sincronizar dados com Supabase:', e);
@@ -958,12 +1140,14 @@ export class TotusDBManager {
       updated_at: cliente.updated_at
     });
 
+    const compInicial = this.getCompetenciaInicialCliente(cliente);
+
     if (!isEdit) {
-      // Gera a cobrança do mês corrente para o novo cliente (após cliente já ter sido persistido)
-      const today = new Date();
-      const mes = today.getMonth() + 1;
-      const ano = today.getFullYear();
-      this.gerarCobrancaParaCliente(cliente, mes, ano);
+      // Quando cadastrar um novo cliente, as cobranças começam a contar a partir do mês da Data de Início do Serviço
+      this.gerarCobrancaParaCliente(cliente, compInicial.mes, compInicial.ano);
+    } else {
+      // Se for edição, ajusta as cobranças para respeitar a nova data de início do serviço
+      this.ajustarCobrancasAoInicioDoServico(cliente, compInicial.mes, compInicial.ano);
     }
 
     return cliente;

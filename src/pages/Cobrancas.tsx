@@ -39,9 +39,18 @@ export const CobrancasPage: React.FC<CobrancasPageProps> = ({
   const [mesFiltro, setMesFiltro] = useState<number>(10);
   const [anoFiltro, setAnoFiltro] = useState<number>(2026);
 
-  // Mapear cobranças com dados dos clientes
+  // Mapear cobranças com dados dos clientes (deduplicadas por cliente e competência)
   const cobrancasDetalhadas = useMemo(() => {
-    return cobrancas.map(cob => {
+    const cobMap = new Map<string, typeof cobrancas[0]>();
+    for (const cob of cobrancas) {
+      if (!cob || !cob.cliente_id) continue;
+      const key = `${cob.cliente_id}-${cob.competencia_mes}-${cob.competencia_ano}`;
+      if (!cobMap.has(key) || cob.status === 'pago') {
+        cobMap.set(key, cob);
+      }
+    }
+
+    return Array.from(cobMap.values()).map(cob => {
       const cliente = clientes.find(c => c.id === cob.cliente_id);
       const promessa = promessas.find(p => p.cobranca_id === cob.id && p.situacao === 'aguardando');
       return { cob, cliente, promessa };

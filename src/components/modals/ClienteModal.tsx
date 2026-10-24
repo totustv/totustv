@@ -336,10 +336,17 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
             {cliente ? (
               <button
                 type="button"
-                onClick={() => {
-                  if (window.confirm(`Tem certeza que deseja excluir o cliente "${cliente.nome}"? Todas as faturas e registros vinculados serão removidos.`)) {
-                    excluirCliente(cliente.id);
-                    onClose();
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  if (window.confirm(`Tem certeza que deseja excluir o cliente "${cliente.nome}"? Todas as faturas e registros vinculados serão removidos permanentemente.`)) {
+                    try {
+                      excluirCliente(cliente.id);
+                      onClose();
+                    } catch (err: any) {
+                      console.error('Erro ao excluir cliente:', err);
+                      alert(err?.message || 'Erro ao excluir cliente');
+                    }
                   }
                 }}
                 className="btn btn-secondary"
