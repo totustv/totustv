@@ -240,11 +240,20 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', marginTop: '2px', paddingLeft: '17px' }}>
-                            <span style={{ fontFamily: 'var(--font-mono)' }}>{formatPhone(cli.whatsapp)}</span>
-                          </div>
                           {cli.observacoes && (
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', maxWidth: '240px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px', paddingLeft: '17px' }}>
+                            <div
+                              style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--text-subtle)',
+                                maxWidth: '260px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                marginTop: '2px',
+                                paddingLeft: '17px',
+                              }}
+                              title={cli.observacoes}
+                            >
                               {cli.observacoes}
                             </div>
                           )}
