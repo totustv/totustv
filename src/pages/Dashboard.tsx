@@ -449,17 +449,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-main)' }}>
-                Ações Necessárias (Contatos & Cobranças Prioritárias)
-              </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-subtle)' }}>
-                Faturas com vencimento hoje/amanhã, promessas em acompanhamento e pendências
+                Cobranças Prioritárias
               </div>
             </div>
           </div>
-
-          <span className="badge badge-pendente">
-            {acoesNecessarias.length} cliente(s) aguardando
-          </span>
         </div>
 
         {acoesNecessarias.length === 0 ? (
