@@ -71,32 +71,102 @@ export function formatDateTime(dateTimeString: string | undefined | null): strin
 }
 
 /**
- * Formata telefone para formato de WhatsApp brasileiro: (XX) XXXXX-XXXX
+ * Formata telefone para exibição legível com máscara (Brasil ou Internacional)
  */
 export function formatPhone(phone: string): string {
   if (!phone) return '';
-  const digits = phone.replace(/\D/g, '');
+  const trimmed = phone.trim();
+
+  // Se já possui DDI internacional explícito com '+'
+  if (trimmed.startsWith('+')) {
+    // Se for +55 sem formatação (ex: +5521995651510)
+    const digitsOnly = trimmed.slice(1).replace(/\D/g, '');
+    if (digitsOnly.startsWith('55')) {
+      const rest = digitsOnly.slice(2);
+      if (rest.length === 11) {
+        return `+55 (${rest.slice(0, 2)}) ${rest.slice(2, 7)}-${rest.slice(7)}`;
+      }
+      if (rest.length === 10) {
+        return `+55 (${rest.slice(0, 2)}) ${rest.slice(2, 6)}-${rest.slice(6)}`;
+      }
+    }
+    return trimmed;
+  }
+
+  const digits = trimmed.replace(/\D/g, '');
   if (digits.length === 11) {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   }
   if (digits.length === 10) {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
   }
+  if (digits.startsWith('55') && digits.length === 13) {
+    const ddd = digits.slice(2, 4);
+    const num = digits.slice(4);
+    return `+55 (${ddd}) ${num.slice(0, 5)}-${num.slice(5)}`;
+  }
+  if (digits.startsWith('55') && digits.length === 12) {
+    const ddd = digits.slice(2, 4);
+    const num = digits.slice(4);
+    return `+55 (${ddd}) ${num.slice(0, 4)}-${num.slice(4)}`;
+  }
   return phone;
 }
 
 /**
- * Retorna número pronto para link do WhatsApp (ex: 5511999999999)
+ * Retorna número pronto para link da API oficial do WhatsApp wa.me (apenas dígitos com DDI)
+ * Suporta perfeitamente números nacionais e clientes internacionais
  */
 export function cleanWhatsAppNumber(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
+  if (!phone) return '';
+  const trimmed = phone.trim();
+
+  // Se inicia com '+' indicando formato internacional E.164 (ex: +351 912 345 678 ou +1 555 123 4567)
+  if (trimmed.startsWith('+')) {
+    return trimmed.replace(/\D/g, '');
+  }
+
+  const digits = trimmed.replace(/\D/g, '');
+
+  // Se tem 12 ou mais dígitos e já começa com 55 (ex: 5521999999999)
   if (digits.startsWith('55') && digits.length >= 12) {
     return digits;
   }
-  if (digits.length >= 10) {
+
+  // Se tem 10 ou 11 dígitos (padrão Brasil sem DDI)
+  if (digits.length === 10 || digits.length === 11) {
     return `55${digits}`;
   }
+
   return digits;
+}
+
+/**
+ * Converte valor em formato monetário (ex: "28,00" ou "28" ou "1.250,50") para número puro
+ */
+export function parseCurrencyInput(value: string | number): number {
+  if (typeof value === 'number') return isNaN(value) ? 0 : value;
+  if (!value) return 0;
+  const limpo = String(value).replace(/[^\d.,]/g, '');
+  if (!limpo) return 0;
+  if (limpo.includes(',')) {
+    const semPontoMilhar = limpo.replace(/\./g, '');
+    const comPontoDecimal = semPontoMilhar.replace(',', '.');
+    const parsed = parseFloat(comPontoDecimal);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  const parsed = parseFloat(limpo);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+/**
+ * Formata um valor numérico para exibição limpa em input monetário brasileiro ("28,00")
+ */
+export function formatCurrencyInput(value: number | string | undefined | null): string {
+  if (value === undefined || value === null || value === '') return '';
+  const num = typeof value === 'number' ? value : parseCurrencyInput(value);
+  if (isNaN(num)) return '';
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /**

@@ -19,7 +19,7 @@ import {
 import { useTotus } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Cliente, Cobranca } from '../types';
-import { formatCurrency, formatDate, formatAniversario, cleanWhatsAppNumber, isToday, isTomorrow, isPastDate, formatStatusBadge } from '../lib/utils';
+import { formatCurrency, formatDate, formatAniversario, cleanWhatsAppNumber, formatPhone, isToday, isTomorrow, isPastDate, formatStatusBadge } from '../lib/utils';
 
 interface ClientesPageProps {
   onOpenNovoCliente: () => void;
@@ -88,7 +88,8 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
         const query = busca.toLowerCase().trim();
         if (query) {
           const matchNome = cli.nome.toLowerCase().includes(query);
-          const matchTel = cli.whatsapp.includes(query);
+          const queryDigits = query.replace(/\D/g, '');
+          const matchTel = cli.whatsapp.toLowerCase().includes(query) || (queryDigits.length > 0 && cli.whatsapp.replace(/\D/g, '').includes(queryDigits));
           const matchCidade = cli.cidade ? cli.cidade.toLowerCase().includes(query) : false;
           const matchEstado = cli.estado ? cli.estado.toLowerCase().includes(query) : false;
           const matchPais = cli.pais ? cli.pais.toLowerCase().includes(query) : false;
@@ -240,7 +241,7 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
                             )}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', marginTop: '2px', paddingLeft: '17px' }}>
-                            <span style={{ fontFamily: 'var(--font-mono)' }}>{cli.whatsapp}</span>
+                            <span style={{ fontFamily: 'var(--font-mono)' }}>{formatPhone(cli.whatsapp)}</span>
                           </div>
                           {cli.observacoes && (
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', maxWidth: '240px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px', paddingLeft: '17px' }}>

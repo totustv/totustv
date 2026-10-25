@@ -16,13 +16,30 @@ import {
 import { useTotus } from '../context/AppContext';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { totusDB } from '../lib/db';
+import { formatCurrencyInput, parseCurrencyInput } from '../lib/utils';
 
 export const ConfiguracoesPage: React.FC = () => {
   const { config, salvarConfig, resetarBanco, exportarBackup, importarBackup } = useTotus();
   const [formData, setFormData] = useState({ ...config });
+  const [valorPadraoExibicao, setValorPadraoExibicao] = useState(() => {
+    return formatCurrencyInput(config.valor_mensalidade_padrao);
+  });
   const [mensagemSucesso, setMensagemSucesso] = useState('');
   const [backupJson, setBackupJson] = useState('');
   const [sincronizando, setSincronizando] = useState(false);
+
+  const handleValorPadraoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const limpo = e.target.value.replace(/[^\d.,]/g, '');
+    setValorPadraoExibicao(limpo);
+    const num = parseCurrencyInput(limpo);
+    setFormData(prev => ({ ...prev, valor_mensalidade_padrao: num }));
+  };
+
+  const handleValorPadraoBlur = () => {
+    const num = parseCurrencyInput(valorPadraoExibicao);
+    setValorPadraoExibicao(formatCurrencyInput(num));
+    setFormData(prev => ({ ...prev, valor_mensalidade_padrao: num }));
+  };
 
   const handleSyncSupabase = async () => {
     setSincronizando(true);
@@ -38,7 +55,8 @@ export const ConfiguracoesPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    salvarConfig(formData);
+    const num = parseCurrencyInput(valorPadraoExibicao);
+    salvarConfig({ ...formData, valor_mensalidade_padrao: num });
     setMensagemSucesso('Configurações salvas com sucesso!');
     setTimeout(() => setMensagemSucesso(''), 3000);
   };
@@ -116,14 +134,39 @@ export const ConfiguracoesPage: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label">Valor Padrão da Mensalidade (R$)</label>
-              <input
-                type="number"
-                step="0.01"
-                className="form-control"
-                value={formData.valor_mensalidade_padrao}
-                onChange={e => setFormData({ ...formData, valor_mensalidade_padrao: Number(e.target.value) })}
-                required
-              />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    color: 'var(--accent-emerald)',
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                    zIndex: 1,
+                  }}
+                >
+                  R$
+                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className="form-control"
+                  style={{
+                    paddingLeft: '38px',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.95rem',
+                    color: 'var(--text-main)',
+                  }}
+                  value={valorPadraoExibicao}
+                  onChange={handleValorPadraoChange}
+                  onBlur={handleValorPadraoBlur}
+                  placeholder="0,00"
+                  required
+                />
+              </div>
             </div>
 
             <div className="form-group">

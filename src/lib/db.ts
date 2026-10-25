@@ -1084,7 +1084,7 @@ export class TotusDBManager {
       cliente = {
         id,
         nome: data.nome.trim(),
-        whatsapp: data.whatsapp.replace(/\D/g, ''),
+        whatsapp: data.whatsapp.trim(),
         valor_mensalidade: Number(data.valor_mensalidade),
         dia_vencimento: Number(data.dia_vencimento),
         data_cadastro: now,
