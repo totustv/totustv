@@ -278,10 +278,7 @@ export const FinanceiroPage: React.FC<FinanceiroPageProps> = ({ onEditDespesa })
         <div className="card-header">
           <div>
             <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-main)' }}>
-              Livro Caixa Auditável (Entradas & Saídas Realizadas)
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-subtle)' }}>
-              Cada registro é único e vinculado à fatura ou despesa de origem correspondente
+              Entradas & Saídas Realizadas
             </div>
           </div>
 
