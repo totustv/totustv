@@ -676,6 +676,37 @@ select.form-control {
   padding: 24px;
 }
 
+/* Grupo de Telefone / WhatsApp com Seletor de DDI */
+.phone-input-group {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.phone-ddi-select {
+  width: 115px !important;
+  min-width: 100px !important;
+  max-width: 125px !important;
+  flex: 0 0 115px !important;
+  box-sizing: border-box;
+}
+
+.phone-custom-ddi {
+  width: 65px !important;
+  min-width: 55px !important;
+  max-width: 75px !important;
+  flex: 0 0 65px !important;
+  box-sizing: border-box;
+}
+
+.phone-number-input {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
 /* ==============================================================================
    RESPONSIVIDADE
    Obs.: várias telas usam estilos inline; por isso algumas regras abaixo usam
@@ -1344,23 +1375,65 @@ select.form-control {
     margin: 0 auto 14px;
   }
 
-  /* Colapsar todas as linhas com grids dentro do modal em 1 coluna no mobile */
-  .modal-content [style*="grid-template-columns"],
-  .modal-content [style*="gridTemplateColumns"],
+  /* Colapsar todas as linhas com grids dentro do modal em 1 coluna no mobile (exceto birthday-grid) */
+  .modal-content [style*="grid-template-columns"]:not(.birthday-grid),
+  .modal-content [style*="gridTemplateColumns"]:not(.birthday-grid),
   .modal-content [style*="1.2fr 1fr 1.8fr"],
-  .modal-content [style*="1fr 1fr"] {
+  .modal-content [style*="1fr 1fr"]:not(.birthday-grid) {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 12px !important;
     width: 100% !important;
   }
 
-  /* Garantir que nenhum campo force overflow horizontal */
+  /* Aniversário lado a lado em 2 colunas no mobile */
+  .modal-content .birthday-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1.3fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  /* Garantir que nenhum campo force overflow horizontal, preservando campos flex em grupo */
   .modal-content .form-group,
-  .modal-content input,
-  .modal-content select,
+  .modal-content input:not(.phone-custom-ddi):not(.phone-number-input),
+  .modal-content select:not(.phone-ddi-select),
   .modal-content textarea {
     min-width: 0 !important;
     max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Grupo de WhatsApp e Telefone com DDI no mobile */
+  .modal-content .phone-input-group {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .modal-content .phone-ddi-select {
+    width: 115px !important;
+    min-width: 100px !important;
+    max-width: 125px !important;
+    flex: 0 0 115px !important;
+    box-sizing: border-box !important;
+  }
+
+  .modal-content .phone-custom-ddi {
+    width: 65px !important;
+    min-width: 55px !important;
+    max-width: 75px !important;
+    flex: 0 0 65px !important;
+    box-sizing: border-box !important;
+  }
+
+  .modal-content .phone-number-input {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
@@ -1377,9 +1450,18 @@ select.form-control {
 
 /* ---------- Telas bem estreitas ---------- */
 @media (max-width: 400px) {
-  .modal-content [style*="grid-template-columns"],
-  .modal-content [style*="gridTemplateColumns"] {
+  .modal-content [style*="grid-template-columns"]:not(.birthday-grid),
+  .modal-content [style*="gridTemplateColumns"]:not(.birthday-grid) {
     grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .modal-content .phone-ddi-select {
+    width: 105px !important;
+    min-width: 95px !important;
+    flex: 0 0 105px !important;
+    font-size: 0.78rem !important;
+    padding-left: 6px !important;
+    padding-right: 20px !important;
   }
 
   .brand-name {

@@ -329,12 +329,15 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
                 </span>
               </label>
 
-              <div style={{ display: 'flex', gap: '6px' }}>
+              <div className="phone-input-group" style={{ display: 'flex', gap: '6px' }}>
                 {/* Seletor de Código do País */}
                 <select
-                  className="form-control"
+                  className="form-control phone-ddi-select"
                   style={{
                     width: '115px',
+                    minWidth: '100px',
+                    maxWidth: '125px',
+                    flex: '0 0 115px',
                     flexShrink: 0,
                     fontWeight: 600,
                     fontSize: '0.82rem',
@@ -357,9 +360,12 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
                 {ddiCodigo === 'outro' && (
                   <input
                     type="text"
-                    className="form-control"
+                    className="form-control phone-custom-ddi"
                     style={{
                       width: '65px',
+                      minWidth: '55px',
+                      maxWidth: '75px',
+                      flex: '0 0 65px',
                       flexShrink: 0,
                       fontFamily: 'var(--font-mono)',
                       fontWeight: 600,
@@ -378,9 +384,10 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
                 <input
                   type="text"
                   inputMode="tel"
-                  className="form-control"
+                  className="form-control phone-number-input"
                   style={{
-                    flex: 1,
+                    flex: '1 1 auto',
+                    minWidth: 0,
                     fontFamily: 'var(--font-mono)',
                     fontWeight: 600,
                     letterSpacing: '0.3px',
@@ -527,7 +534,7 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
                 <span>Aniversário</span>
                 <span style={{ fontSize: '0.72rem', fontWeight: 500, color: 'var(--text-subtle)' }}>Dia e Mês</span>
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '8px' }}>
+              <div className="birthday-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '8px' }}>
                 <select
                   className="form-control"
                   value={anivDia}
