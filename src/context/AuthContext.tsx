@@ -35,28 +35,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const carregarUsuarioLocal = () => {
         try {
           const savedUserId = localStorage.getItem(AUTH_STORAGE_KEY);
-          const allUsers = totusDB.getUsuarios();
           if (savedUserId) {
+            const allUsers = totusDB.getUsuarios();
             const found = allUsers.find(u => u.id === savedUserId);
             if (found) {
               if (found.status === 'suspenso') {
                 localStorage.removeItem(AUTH_STORAGE_KEY);
                 setCurrentUser(null);
                 setError('Sua conta está suspensa pelo administrador.');
+              } else if (found.status === 'inativo') {
+                localStorage.removeItem(AUTH_STORAGE_KEY);
+                setCurrentUser(null);
+                setError('Sua conta está inativada.');
               } else {
                 setCurrentUser(found);
               }
               return;
             }
           }
-          // Usuário default inicial: Admin
-          const defaultAdmin = allUsers[0] || INITIAL_USERS[0];
-          setCurrentUser(defaultAdmin);
-          localStorage.setItem(AUTH_STORAGE_KEY, defaultAdmin.id);
+          // Sem usuário salvo no dispositivo: NÃO logar automaticamente! Usuário deve se autenticar na Tela de Login.
+          setCurrentUser(null);
         } catch (e) {
           console.warn('Erro ao carregar sessão local:', e);
-          const defaultAdmin = INITIAL_USERS[0];
-          setCurrentUser(defaultAdmin);
+          setCurrentUser(null);
         }
       };
 
@@ -92,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setCurrentUser(fallbackProfile);
             }
           } else {
-            // Sem sessão ativa no Supabase Auth: carrega perfil local (Admin padrão)
+            // Sem sessão ativa no Supabase Auth: checa se há sessão local ativa
             carregarUsuarioLocal();
           }
         } catch (err) {
@@ -148,14 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           password: password || '123456',
         });
 
-        if (sbError) {
-          setIsLoading(false);
-          const msg = 'E-mail ou senha inválidos. Por favor, tente novamente.';
-          setError(msg);
-          return { success: false, error: msg };
-        }
-
-        if (data.user) {
+        if (!sbError && data?.user) {
           const { data: profile } = await supabase
             .from('perfis')
             .select('*')
@@ -170,15 +164,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return { success: false, error: msg };
           }
 
-          setCurrentUser(profile);
+          const userProfile: UserProfile = profile || {
+            id: data.user.id,
+            email: data.user.email || emailLimpo,
+            nome: data.user.user_metadata?.nome || emailLimpo.split('@')[0],
+            role: (data.user.user_metadata?.role as UserRole) || 'admin',
+            status: 'ativo',
+            created_at: data.user.created_at,
+          };
+
+          setCurrentUser(userProfile);
+          localStorage.setItem(AUTH_STORAGE_KEY, userProfile.id);
           setIsLoading(false);
           return { success: true };
         }
       } catch (err: any) {
-        setIsLoading(false);
-        const msg = err.message || 'Falha ao autenticar no servidor.';
-        setError(msg);
-        return { success: false, error: msg };
+        console.warn('Erro ao autenticar no Supabase, tentando validação local:', err);
       }
     }
 
@@ -324,9 +325,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return totusDB.getUsuarios();
   }, [currentUser]);
 
-  const role: UserRole = currentUser?.role || 'admin';
-  const isAdmin = !currentUser || role === 'admin';
-  const isReseller = currentUser ? role === 'reseller' : false;
+  const role: UserRole = currentUser?.role || 'reseller';
+  const isAdmin = currentUser?.role === 'admin';
+  const isReseller = currentUser?.role === 'reseller';
 
   return (
     <AuthContext.Provider
@@ -355,8 +356,8 @@ export const useAuth = () => {
   if (!ctx) {
     return {
       currentUser: null,
-      role: 'admin' as UserRole,
-      isAdmin: true,
+      role: 'reseller' as UserRole,
+      isAdmin: false,
       isReseller: false,
       isLoading: false,
       error: null,
