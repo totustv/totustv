@@ -18,7 +18,7 @@ interface AuthContextType {
   usuariosDisponiveis: UserProfile[];
 }
 
-const AUTH_STORAGE_KEY = 'totustv_current_user_session';
+const AUTH_STORAGE_KEY = 'totustv_auth_session_v3';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -32,6 +32,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async function initSession() {
       setIsLoading(true);
 
+      // Limpa qualquer resíduo de sessão legada (ex: auto-login antigo salvo em navegadores mobile como Navegador Mi)
+      try {
+        localStorage.removeItem('totustv_current_user_session');
+        localStorage.removeItem('totustv_auth_session_v2');
+      } catch (e) {
+        console.warn('Erro ao limpar sessões legadas:', e);
+      }
+
       const carregarUsuarioLocal = () => {
         try {
           const savedUserId = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -40,11 +48,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const found = allUsers.find(u => u.id === savedUserId);
             if (found) {
               if (found.status === 'suspenso') {
-                localStorage.removeItem(AUTH_STORAGE_KEY);
+                try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch {}
                 setCurrentUser(null);
                 setError('Sua conta está suspensa pelo administrador.');
               } else if (found.status === 'inativo') {
-                localStorage.removeItem(AUTH_STORAGE_KEY);
+                try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch {}
                 setCurrentUser(null);
                 setError('Sua conta está inativada.');
               } else {
@@ -53,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               return;
             }
           }
-          // Sem usuário salvo no dispositivo: NÃO logar automaticamente! Usuário deve se autenticar na Tela de Login.
+          // Sem usuário salvo explicitamente após login: SEMPRE exige autenticação na Tela de Login
           setCurrentUser(null);
         } catch (e) {
           console.warn('Erro ao carregar sessão local:', e);
@@ -193,7 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         totusDB.salvarUsuario(foundUser);
 
         setCurrentUser(foundUser);
-        localStorage.setItem(AUTH_STORAGE_KEY, foundUser.id);
+        try { localStorage.setItem(AUTH_STORAGE_KEY, foundUser.id); } catch {}
         return { success: true };
       }
     }
@@ -236,7 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
 
           setCurrentUser(userProfile);
-          localStorage.setItem(AUTH_STORAGE_KEY, userProfile.id);
+          try { localStorage.setItem(AUTH_STORAGE_KEY, userProfile.id); } catch {}
           return { success: true };
         }
       } catch (err: any) {
@@ -270,7 +278,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch {}
     setCurrentUser(null);
   };
 
