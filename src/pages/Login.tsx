@@ -49,7 +49,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
     setLoading(false);
 
     if (!res.success) {
-      setErrorMsg(res.error || 'Credenciais inválidas. Tente novamente.');
+      const msg = (!res.error || res.error === 'Não autenticado') ? 'E-mail ou senha incorreto.' : res.error;
+      setErrorMsg(msg);
     } else {
       if (onSuccess) onSuccess();
     }

@@ -136,18 +136,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string }> => {
-    setIsLoading(true);
     setError(null);
 
     const emailLimpo = email.trim().toLowerCase();
+    const senhaDigitada = (password || '').trim();
 
-    // 1. Supabase Auth se configurado
+    if (!emailLimpo || !senhaDigitada) {
+      const msg = 'E-mail ou senha incorreto.';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    // 1. Verifica primeiro os usuários cadastrados no totusDB (Admin e revendedores locais)
+    const allUsers = totusDB.getUsuarios();
+    const foundUser = allUsers.find(u => u.email.toLowerCase() === emailLimpo);
+
+    if (foundUser) {
+      let senhaSalva = '123456';
+      try {
+        const customPasswords = JSON.parse(localStorage.getItem('totustv_user_passwords_v1') || '{}');
+        if (customPasswords[emailLimpo]) {
+          senhaSalva = customPasswords[emailLimpo];
+        } else if ((foundUser as any).senhaHash) {
+          senhaSalva = (foundUser as any).senhaHash;
+        }
+      } catch {
+        senhaSalva = (foundUser as any).senhaHash || '123456';
+      }
+
+      // Se a senha local coincidir
+      if (senhaDigitada === senhaSalva) {
+        if (foundUser.status === 'suspenso') {
+          const msg = 'Acesso negado: esta conta foi suspensa pela administração.';
+          setError(msg);
+          return { success: false, error: msg };
+        }
+
+        if (foundUser.status === 'inativo') {
+          const msg = 'Acesso negado: conta inativada.';
+          setError(msg);
+          return { success: false, error: msg };
+        }
+
+        // Registra auditoria de login
+        totusDB.registrarLogAuditoria({
+          user_id: foundUser.id,
+          user_nome: foundUser.nome,
+          user_email: foundUser.email,
+          acao: 'login',
+          tabela: 'auth',
+          detalhes: `Login realizado com perfil: ${foundUser.role.toUpperCase()}`,
+        });
+
+        // Atualiza último acesso
+        foundUser.ultimo_acesso = new Date().toISOString();
+        totusDB.salvarUsuario(foundUser);
+
+        setCurrentUser(foundUser);
+        localStorage.setItem(AUTH_STORAGE_KEY, foundUser.id);
+        return { success: true };
+      }
+    }
+
+    // 2. Se não autenticou localmente, tenta autenticar no Supabase Auth (se configurado)
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error: sbError } = await supabase.auth.signInWithPassword({
-          email: emailLimpo,
-          password: password || '123456',
-        });
+        const timeoutPromise = new Promise<{ data: null; error: any }>((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 3500)
+        );
+        const { data, error: sbError } = await Promise.race([
+          supabase.auth.signInWithPassword({
+            email: emailLimpo,
+            password: senhaDigitada,
+          }),
+          timeoutPromise,
+        ]) as any;
 
         if (!sbError && data?.user) {
           const { data: profile } = await supabase
@@ -158,7 +221,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (profile?.status === 'suspenso') {
             await supabase.auth.signOut();
-            setIsLoading(false);
             const msg = 'Esta conta está suspensa. Entre em contato com o suporte Totus TV.';
             setError(msg);
             return { success: false, error: msg };
@@ -175,57 +237,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           setCurrentUser(userProfile);
           localStorage.setItem(AUTH_STORAGE_KEY, userProfile.id);
-          setIsLoading(false);
           return { success: true };
         }
       } catch (err: any) {
-        console.warn('Erro ao autenticar no Supabase, tentando validação local:', err);
+        console.warn('Erro ou timeout ao autenticar no Supabase:', err);
       }
     }
 
-    // 2. Sistema Local Autenticado de Alta Precisão
-    const allUsers = totusDB.getUsuarios();
-    const foundUser = allUsers.find(u => u.email.toLowerCase() === emailLimpo);
-
-    if (!foundUser) {
-      setIsLoading(false);
-      const msg = 'E-mail ou senha incorretos.';
-      setError(msg);
-      return { success: false, error: msg };
-    }
-
-    if (foundUser.status === 'suspenso') {
-      setIsLoading(false);
-      const msg = 'Acesso negado: esta conta foi suspensa pela administração.';
-      setError(msg);
-      return { success: false, error: msg };
-    }
-
-    if (foundUser.status === 'inativo') {
-      setIsLoading(false);
-      const msg = 'Acesso negado: conta inativada.';
-      setError(msg);
-      return { success: false, error: msg };
-    }
-
-    // Registra auditoria de login
-    totusDB.registrarLogAuditoria({
-      user_id: foundUser.id,
-      user_nome: foundUser.nome,
-      user_email: foundUser.email,
-      acao: 'login',
-      tabela: 'auth',
-      detalhes: `Login realizado com perfil: ${foundUser.role.toUpperCase()}`,
-    });
-
-    // Atualiza último acesso
-    foundUser.ultimo_acesso = new Date().toISOString();
-    totusDB.salvarUsuario(foundUser);
-
-    setCurrentUser(foundUser);
-    localStorage.setItem(AUTH_STORAGE_KEY, foundUser.id);
-    setIsLoading(false);
-    return { success: true };
+    // Se chegou até aqui, o e-mail ou a senha estão incorretos
+    const msg = 'E-mail ou senha incorreto.';
+    setError(msg);
+    return { success: false, error: msg };
   };
 
   const logout = async () => {
@@ -295,6 +317,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (currentUser) {
+      try {
+        const customPasswords = JSON.parse(localStorage.getItem('totustv_user_passwords_v1') || '{}');
+        customPasswords[currentUser.email.toLowerCase()] = novaSenha;
+        localStorage.setItem('totustv_user_passwords_v1', JSON.stringify(customPasswords));
+      } catch (e) {
+        console.warn('Erro ao salvar senha redefinida:', e);
+      }
+
       totusDB.registrarLogAuditoria({
         user_id: currentUser.id,
         user_nome: currentUser.nome,
@@ -361,10 +391,10 @@ export const useAuth = () => {
       isReseller: false,
       isLoading: false,
       error: null,
-      login: async () => ({ success: false, error: 'Não autenticado' }),
+      login: async () => ({ success: false, error: 'E-mail ou senha incorreto.' }),
       logout: async () => {},
-      recuperarSenha: async () => ({ success: false, message: '', error: 'Não autenticado' }),
-      redefinirSenha: async () => ({ success: false, message: '', error: 'Não autenticado' }),
+      recuperarSenha: async () => ({ success: false, message: '', error: 'E-mail não encontrado' }),
+      redefinirSenha: async () => ({ success: false, message: '', error: 'Erro ao redefinir senha' }),
       trocarPerfilTeste: () => {},
       usuariosDisponiveis: [],
     };
