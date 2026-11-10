@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, UserPlus, Save, Shield, MapPin, Globe, Trash2 } from 'lucide-react';
+import { X, UserPlus, Save, Shield, MapPin, Globe, Trash2, Power } from 'lucide-react';
 import { Cliente } from '../../types';
 import { useTotus } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -163,7 +163,7 @@ interface ClienteModalProps {
 }
 
 export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) => {
-  const { salvarCliente, clientes, config, usuarios, excluirCliente } = useTotus();
+  const { salvarCliente, clientes, config, usuarios, excluirCliente, toggleStatusCliente } = useTotus();
   const { currentUser, isAdmin, isReseller } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -651,29 +651,50 @@ export const ClienteModal: React.FC<ClienteModalProps> = ({ cliente, onClose }) 
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', flexWrap: 'wrap', gap: '8px' }}>
             {cliente ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  if (window.confirm(`Tem certeza que deseja excluir o cliente "${cliente.nome}"? Todas as faturas e registros vinculados serão removidos permanentemente.`)) {
-                    try {
-                      excluirCliente(cliente.id);
-                      onClose();
-                    } catch (err: any) {
-                      console.error('Erro ao excluir cliente:', err);
-                      alert(err?.message || 'Erro ao excluir cliente');
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const nextStatus = formData.status === 'ativo' ? 'inativo' : 'ativo';
+                    setFormData(prev => ({ ...prev, status: nextStatus }));
+                    toggleStatusCliente(cliente.id);
+                  }}
+                  className="btn btn-secondary"
+                  style={{
+                    color: formData.status === 'ativo' ? 'var(--accent-amber)' : '#10b981',
+                    borderColor: formData.status === 'ativo' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(16, 185, 129, 0.35)',
+                  }}
+                >
+                  <Power size={16} />
+                  <span>{formData.status === 'ativo' ? 'Desativar Cliente' : 'Ativar Cliente'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (window.confirm(`Tem certeza que deseja excluir o cliente "${cliente.nome}"? Todas as faturas e registros vinculados serão removidos permanentemente.`)) {
+                      try {
+                        excluirCliente(cliente.id);
+                        onClose();
+                      } catch (err: any) {
+                        console.error('Erro ao excluir cliente:', err);
+                        alert(err?.message || 'Erro ao excluir cliente');
+                      }
                     }
-                  }
-                }}
-                className="btn btn-secondary"
-                style={{ color: 'var(--accent-rose)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-              >
-                <Trash2 size={16} />
-                <span>Excluir Cliente</span>
-              </button>
+                  }}
+                  className="btn btn-secondary"
+                  style={{ color: 'var(--accent-rose)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                >
+                  <Trash2 size={16} />
+                  <span>Excluir Cliente</span>
+                </button>
+              </div>
             ) : (
               <div />
             )}

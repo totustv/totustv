@@ -497,6 +497,42 @@ export class TotusDBManager {
       }
     }
 
+    // Sincronizar data de vencimento das cobranças em aberto com o dia_vencimento preferencial do cliente
+    // (exceto quando houver ajuste individual explícito registrado para aquela fatura específica)
+    const individualOverrides = new Set<string>();
+    (this.db.historico_vencimentos || []).forEach(h => {
+      if (h && h.cobranca_id && h.data_vencimento_nova) {
+        individualOverrides.add(`${h.cobranca_id}:${h.data_vencimento_nova}`);
+      }
+    });
+
+    for (const cob of this.db.cobrancas) {
+      if (cob.status !== 'pendente' && cob.status !== 'avisado' && cob.status !== 'atrasado') continue;
+      const cli = clientMap.get(cob.cliente_id);
+      if (!cli || !cli.dia_vencimento) continue;
+
+      if (individualOverrides.has(`${cob.id}:${cob.data_vencimento}`)) continue;
+
+      const expectedDate = getValidDateForMonth(cob.competencia_ano, cob.competencia_mes, Number(cli.dia_vencimento));
+      if (cob.data_vencimento !== expectedDate) {
+        cob.data_vencimento = expectedDate;
+        if (isPastDate(expectedDate)) {
+          cob.status = 'atrasado';
+        } else if (cob.status === 'atrasado') {
+          cob.status = 'pendente';
+        }
+        cob.updated_at = new Date().toISOString();
+        this.pushToSupabase(
+          'cobrancas',
+          { data_vencimento: cob.data_vencimento, status: cob.status, updated_at: cob.updated_at },
+          'update',
+          'id',
+          cob.id
+        );
+        changed = true;
+      }
+    }
+
     if (changed) {
       this.persist();
     }
@@ -570,16 +606,36 @@ export class TotusDBManager {
             };
           });
 
+        const rawHists: any[] = Array.isArray(parsed.historico_vencimentos) ? parsed.historico_vencimentos : [];
+        const storedOverrides = new Set<string>();
+        rawHists.forEach((h: any) => {
+          if (h && h.cobranca_id && h.data_vencimento_nova) {
+            storedOverrides.add(`${h.cobranca_id}:${h.data_vencimento_nova}`);
+          }
+        });
+
         const rawCobrancas: any[] = Array.isArray(parsed.cobrancas) ? parsed.cobrancas : INITIAL_COBRANCAS;
         const cobMap = new Map<string, any>();
         for (const c of rawCobrancas) {
           if (!c || !c.cliente_id || this.deletedClientIds.has(c.cliente_id)) continue;
+          const cli = validClientes.find((cl: any) => cl.id === c.cliente_id);
           if (c.status !== 'pago') {
-            const cli = validClientes.find((cl: any) => cl.id === c.cliente_id);
             if (cli && cli.data_inicio_servico) {
               const [startAno, startMes] = cli.data_inicio_servico.split('-').map(Number);
               if (startAno && startMes && (c.competencia_ano < startAno || (c.competencia_ano === startAno && c.competencia_mes < startMes))) {
                 continue;
+              }
+            }
+            if (
+              cli &&
+              cli.dia_vencimento &&
+              (c.status === 'pendente' || c.status === 'avisado' || c.status === 'atrasado') &&
+              !storedOverrides.has(`${c.id}:${c.data_vencimento}`)
+            ) {
+              const expectedDate = getValidDateForMonth(c.competencia_ano, c.competencia_mes, Number(cli.dia_vencimento));
+              if (c.data_vencimento !== expectedDate) {
+                c.data_vencimento = expectedDate;
+                c.status = isPastDate(expectedDate) ? 'atrasado' : (c.status === 'atrasado' ? 'pendente' : c.status);
               }
             }
           }
@@ -892,11 +948,33 @@ export class TotusDBManager {
 
         // Deduplicação estrita na nuvem por chave cliente + mês + ano
         const cloudCobMap = new Map<string, any>();
+        const duplicateCloudIds: string[] = [];
         for (const c of activeCloud) {
           const key = `${c.cliente_id}-${c.competencia_mes}-${c.competencia_ano}`;
-          if (!cloudCobMap.has(key) || c.status === 'pago') {
+          if (!cloudCobMap.has(key)) {
             cloudCobMap.set(key, c);
+          } else {
+            const existing = cloudCobMap.get(key);
+            const cli = this.db.clientes.find(cl => cl.id === c.cliente_id);
+            const expectedDate = cli ? getValidDateForMonth(c.competencia_ano, c.competencia_mes, Number(cli.dia_vencimento)) : '';
+            const cMatches = expectedDate && c.data_vencimento === expectedDate;
+            const existingMatches = expectedDate && existing.data_vencimento === expectedDate;
+
+            if (
+              (c.status === 'pago' && existing.status !== 'pago') ||
+              (c.status === existing.status && cMatches && !existingMatches) ||
+              (c.status === existing.status && cMatches === existingMatches && (c.updated_at || '') > (existing.updated_at || ''))
+            ) {
+              duplicateCloudIds.push(existing.id);
+              cloudCobMap.set(key, c);
+            } else {
+              duplicateCloudIds.push(c.id);
+            }
           }
+        }
+
+        for (const dupId of duplicateCloudIds) {
+          this.pushToSupabase('cobrancas', null, 'delete', 'id', dupId);
         }
 
         // Itens locais novos que NÃO existem na nuvem para essa competência
@@ -1064,26 +1142,70 @@ export class TotusDBManager {
       if (idx === -1) throw new Error('Cliente não encontrado');
 
       const old = this.db.clientes[idx];
+      const diaMudou = Number(old.dia_vencimento) !== Number(data.dia_vencimento);
+      const valorMudou = Number(old.valor_mensalidade) !== Number(data.valor_mensalidade);
 
-      // Se mudou dia de vencimento, registrar histórico
-      if (old.dia_vencimento !== data.dia_vencimento) {
+      // Se mudou dia de vencimento, registrar histórico e limpar overrides individuais antigos de faturas em aberto
+      if (diaMudou) {
         this.db.historico_vencimentos.push({
           id: `hist-${Date.now()}`,
           cliente_id: id,
           dia_anterior: old.dia_vencimento,
-          dia_novo: data.dia_vencimento,
+          dia_novo: Number(data.dia_vencimento),
           motivo: 'Alteração cadastral no dia de vencimento preferencial',
           alterado_em: now,
         });
+        this.db.historico_vencimentos = (this.db.historico_vencimentos || []).filter(
+          h => !(h.cliente_id === id && h.cobranca_id)
+        );
       }
 
       cliente = {
         ...old,
         ...data,
+        dia_vencimento: Number(data.dia_vencimento),
+        valor_mensalidade: Number(data.valor_mensalidade),
         reseller_id: data.reseller_id !== undefined ? (data.reseller_id || undefined) : old.reseller_id,
         updated_at: now,
       };
       this.db.clientes[idx] = cliente;
+
+      // Atualizar imediatamente todas as cobranças em aberto (pendente, avisado, atrasado) do cliente
+      // quando o dia de vencimento preferencial ou o valor da mensalidade for alterado
+      if (diaMudou || valorMudou) {
+        for (const cob of this.db.cobrancas) {
+          if (
+            cob.cliente_id === cliente.id &&
+            (cob.status === 'pendente' || cob.status === 'avisado' || cob.status === 'atrasado')
+          ) {
+            const novaDataVenc = getValidDateForMonth(
+              cob.competencia_ano,
+              cob.competencia_mes,
+              Number(cliente.dia_vencimento)
+            );
+            cob.data_vencimento = novaDataVenc;
+            cob.valor = Number(cliente.valor_mensalidade);
+            if (isPastDate(novaDataVenc)) {
+              cob.status = 'atrasado';
+            } else if (cob.status === 'atrasado') {
+              cob.status = 'pendente';
+            }
+            cob.updated_at = now;
+            this.pushToSupabase(
+              'cobrancas',
+              {
+                data_vencimento: cob.data_vencimento,
+                valor: cob.valor,
+                status: cob.status,
+                updated_at: cob.updated_at,
+              },
+              'update',
+              'id',
+              cob.id
+            );
+          }
+        }
+      }
     } else {
       cliente = {
         id,

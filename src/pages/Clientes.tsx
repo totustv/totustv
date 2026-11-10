@@ -15,6 +15,7 @@ import {
   TrendingUp,
   MapPin,
   Trash2,
+  Power,
 } from 'lucide-react';
 import { useTotus } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -231,9 +232,22 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
                                 }}
                               />
                             </button>
-                            <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                            <span
+                              style={{
+                                fontWeight: 700,
+                                color: cli.status === 'inativo' ? 'var(--text-subtle)' : 'var(--text-main)',
+                              }}
+                            >
                               {cli.nome}
                             </span>
+                            {cli.status === 'inativo' && (
+                              <span
+                                className="badge badge-atrasado"
+                                style={{ fontSize: '0.68rem', padding: '1px 6px' }}
+                              >
+                                Inativo
+                              </span>
+                            )}
                             {possuiBonus && (
                               <span title="Cliente possui ou usou bônus" style={{ cursor: 'pointer' }}>
                                 🎁
@@ -351,6 +365,24 @@ export const ClientesPage: React.FC<ClientesPageProps> = ({
                           title="Editar Cadastro"
                         >
                           <Edit2 size={15} />
+                        </button>
+
+                        {/* Ativar / Desativar Cliente */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleStatusCliente(cli.id);
+                          }}
+                          className="btn btn-secondary btn-sm btn-icon"
+                          title={cli.status === 'ativo' ? 'Desativar Cliente (Atualmente Ativo)' : 'Ativar Cliente (Atualmente Inativo)'}
+                          style={{
+                            color: cli.status === 'ativo' ? '#10b981' : 'var(--accent-rose)',
+                            borderColor: cli.status === 'ativo' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)',
+                            backgroundColor: cli.status === 'ativo' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                          }}
+                        >
+                          <Power size={15} />
                         </button>
 
                         {/* Excluir Cliente */}

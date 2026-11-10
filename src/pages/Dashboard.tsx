@@ -120,7 +120,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       if (!isToday(c.data_vencimento) && !isTomorrow(c.data_vencimento) && c.status !== 'atrasado' && c.status !== 'prometeu_pagar') continue;
 
       const cli = clientes.find(item => item.id === c.cliente_id);
-      if (!cli) continue;
+      if (!cli || cli.status === 'inativo') continue;
 
       // Respeitar rigorosamente a Data de Início do Serviço: faturas anteriores ao início não entram em ações
       if (cli.data_inicio_servico) {
