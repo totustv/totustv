@@ -30,7 +30,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { useTotus } from '../context/AppContext';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate, getMonthName } from '../lib/utils';
 import { Despesa } from '../types';
 
 interface FinanceiroPageProps {
@@ -40,8 +40,18 @@ interface FinanceiroPageProps {
 export const FinanceiroPage: React.FC<FinanceiroPageProps> = ({ onEditDespesa }) => {
   const { kpis, fluxoCaixa, despesas, cobrancas, clientes, excluirDespesa, excluirItemFluxoCaixa } = useTotus();
   const [filtroTipoFluxo, setFiltroTipoFluxo] = useState<'todos' | 'entrada' | 'saida'>('todos');
-  const [mesSelecionado, setMesSelecionado] = useState<number>(10);
-  const [anoSelecionado, setAnoSelecionado] = useState<number>(2026);
+  const [mesSelecionado, setMesSelecionado] = useState<number>(() => new Date().getMonth() + 1);
+  const [anoSelecionado, setAnoSelecionado] = useState<number>(() => new Date().getFullYear());
+
+  const opcoesMesFinanceiro = useMemo(() => {
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const map = new Map<string, { mes: number; ano: number }>();
+    for (let m = 1; m <= 12; m++) {
+      map.set(`${curYear}-${String(m).padStart(2, '0')}`, { mes: m, ano: curYear });
+    }
+    return Array.from(map.values());
+  }, []);
 
   // Filtragem do Livro Caixa
   const fluxoFiltrado = useMemo(() => {
@@ -105,14 +115,21 @@ export const FinanceiroPage: React.FC<FinanceiroPageProps> = ({ onEditDespesa })
         <div style={{ display: 'flex', gap: '8px' }}>
           <select
             className="form-control"
-            style={{ width: '130px', padding: '6px 10px', height: '36px' }}
-            value={mesSelecionado}
-            onChange={e => setMesSelecionado(Number(e.target.value))}
+            style={{ width: '165px', padding: '6px 10px', height: '36px' }}
+            value={`${anoSelecionado}-${String(mesSelecionado).padStart(2, '0')}`}
+            onChange={e => {
+              const [y, m] = e.target.value.split('-').map(Number);
+              if (y && m) {
+                setAnoSelecionado(y);
+                setMesSelecionado(m);
+              }
+            }}
           >
-            <option value={9}>Setembro / 2026</option>
-            <option value={10}>Outubro / 2026</option>
-            <option value={11}>Novembro / 2026</option>
-            <option value={12}>Dezembro / 2026</option>
+            {opcoesMesFinanceiro.map(op => (
+              <option key={`${op.ano}-${op.mes}`} value={`${op.ano}-${String(op.mes).padStart(2, '0')}`}>
+                {getMonthName(op.mes)} / {op.ano}
+              </option>
+            ))}
           </select>
 
           <button onClick={exportarCSV} className="btn btn-secondary">

@@ -33,7 +33,7 @@ import {
 import { useTotus } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Cliente, Cobranca } from '../types';
-import { formatCurrency, formatDate, cleanWhatsAppNumber, isToday, isTomorrow, isPastDate, formatStatusBadge } from '../lib/utils';
+import { formatCurrency, formatDate, cleanWhatsAppNumber, isToday, isTomorrow, isPastDate, formatStatusBadge, getMonthName } from '../lib/utils';
 import confetti from 'canvas-confetti';
 
 interface DashboardProps {
@@ -383,7 +383,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 Status das Cobranças
               </div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-subtle)' }}>
-                Distribuição das faturas de Outubro 2026
+                Distribuição das faturas de {getMonthName(currentMonthDashboard)} {currentYearDashboard}
               </div>
             </div>
           </div>

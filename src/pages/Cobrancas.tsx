@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useTotus } from '../context/AppContext';
 import { Cobranca, Cliente } from '../types';
-import { formatCurrency, formatDate, isToday, isTomorrow, isPastDate, formatStatusBadge } from '../lib/utils';
+import { formatCurrency, formatDate, isToday, isTomorrow, isPastDate, formatStatusBadge, getMonthName } from '../lib/utils';
 
 interface CobrancasPageProps {
   onOpenPagamentoModal: (cobrancaId: string) => void;
@@ -36,8 +36,41 @@ export const CobrancasPage: React.FC<CobrancasPageProps> = ({
   const [filtroAba, setFiltroAba] = useState<
     'todas' | 'dia_10' | 'dia_20' | 'dia_30' | 'vencem_hoje' | 'vencem_amanha' | 'atrasadas' | 'aguardando' | 'promessas' | 'pagas' | 'canceladas'
   >('todas');
-  const [mesFiltro, setMesFiltro] = useState<number>(10);
-  const [anoFiltro, setAnoFiltro] = useState<number>(2026);
+  const [mesFiltro, setMesFiltro] = useState<number>(() => new Date().getMonth() + 1);
+  const [anoFiltro, setAnoFiltro] = useState<number>(() => new Date().getFullYear());
+
+  // Opções dinâmicas de competência (sempre inclui o ano/mês atual, meses próximos e faturas existentes)
+  const opcoesCompetencia = useMemo(() => {
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth() + 1;
+    const map = new Map<string, { mes: number; ano: number }>();
+
+    // Adiciona janela de meses ao redor do mês atual (-3 até +4 meses) e todos os meses do ano atual
+    for (let m = 1; m <= 12; m++) {
+      map.set(`${curYear}-${String(m).padStart(2, '0')}`, { mes: m, ano: curYear });
+    }
+    for (let offset = -3; offset <= 4; offset++) {
+      const d = new Date(curYear, curMonth - 1 + offset, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      map.set(`${y}-${String(m).padStart(2, '0')}`, { mes: m, ano: y });
+    }
+
+    // Inclui também qualquer competência que já possua cobrança registrada
+    for (const c of cobrancas) {
+      if (c && c.competencia_mes && c.competencia_ano) {
+        map.set(`${c.competencia_ano}-${String(c.competencia_mes).padStart(2, '0')}`, {
+          mes: c.competencia_mes,
+          ano: c.competencia_ano,
+        });
+      }
+    }
+
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, val]) => val);
+  }, [cobrancas]);
 
   // Mapear cobranças com dados dos clientes (deduplicadas por cliente e competência)
   const cobrancasDetalhadas = useMemo(() => {
@@ -147,15 +180,22 @@ export const CobrancasPage: React.FC<CobrancasPageProps> = ({
 
           <select
             className="form-control"
-            style={{ width: '170px', height: '42px', minHeight: '42px', padding: '0 12px', fontSize: '0.9rem' }}
-            value={mesFiltro}
-            onChange={e => setMesFiltro(Number(e.target.value))}
+            style={{ width: '185px', height: '42px', minHeight: '42px', padding: '0 12px', fontSize: '0.9rem' }}
+            value={`${anoFiltro}-${String(mesFiltro).padStart(2, '0')}`}
+            onChange={e => {
+              const [y, m] = e.target.value.split('-').map(Number);
+              if (y && m) {
+                setAnoFiltro(y);
+                setMesFiltro(m);
+              }
+            }}
             title="Mês de Competência"
           >
-            <option value={9}>Setembro / 2026</option>
-            <option value={10}>Outubro / 2026</option>
-            <option value={11}>Novembro / 2026</option>
-            <option value={12}>Dezembro / 2026</option>
+            {opcoesCompetencia.map(op => (
+              <option key={`${op.ano}-${op.mes}`} value={`${op.ano}-${String(op.mes).padStart(2, '0')}`}>
+                {getMonthName(op.mes)} / {op.ano}
+              </option>
+            ))}
           </select>
         </div>
       </div>

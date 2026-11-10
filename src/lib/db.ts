@@ -482,7 +482,11 @@ export class TotusDBManager {
       changed = true;
     }
 
-    // Garantir que cada cliente ativo possua a cobrança de sua competência de início
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1;
+    const currentYear = today.getFullYear();
+
+    // Garantir que cada cliente ativo possua a cobrança de sua competência de início e do mês vigente
     for (const cli of this.db.clientes) {
       if (cli.status === 'inativo') continue;
       const comp = this.getCompetenciaInicialCliente(cli);
@@ -494,6 +498,21 @@ export class TotusDBManager {
       if (!hasCob) {
         this.gerarCobrancaParaCliente(cli, comp.mes, comp.ano);
         changed = true;
+      }
+
+      // Quando inicia um novo mês, gera automaticamente a cobrança do mês atual se o cliente já iniciou o serviço
+      const jaIniciouNoMesAtual =
+        comp.ano < currentYear || (comp.ano === currentYear && comp.mes <= currentMonth);
+      if (jaIniciouNoMesAtual && (comp.mes !== currentMonth || comp.ano !== currentYear)) {
+        const hasCobAtual = this.db.cobrancas.some(c =>
+          c.cliente_id === cli.id &&
+          c.competencia_mes === currentMonth &&
+          c.competencia_ano === currentYear
+        );
+        if (!hasCobAtual) {
+          this.gerarCobrancaParaCliente(cli, currentMonth, currentYear);
+          changed = true;
+        }
       }
     }
 
