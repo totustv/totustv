@@ -112,15 +112,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
     { name: 'Bônus/Aniv', value: statusCounts.Dispensadas, color: '#ec4899' },
   ].filter(d => d.value > 0);
 
-  // Ações Necessárias Hoje: Cobranças vencendo hoje, atrasadas, ou promessas vencendo (1 linha por cliente)
+  // Cobranças Prioritárias: mantém faturas pendentes por 5 dias a partir do vencimento
+  // (Dia 10 -> até dia 15 | Dia 20 -> até dia 25 | Dia 30 -> até dia 5 do próximo mês)
   const acoesNecessarias: { cob: Cobranca; cli: Cliente }[] = useMemo(() => {
+    const hoje = new Date();
+    hoje.setHours(12, 0, 0, 0);
+
+    const estaNaJanelaDe5Dias = (dataVencStr: string, diaPreferencial?: number): boolean => {
+      if (!dataVencStr) return false;
+      const parts = dataVencStr.split('T')[0].split('-').map(Number);
+      if (parts.length !== 3) return false;
+      const [anoVenc, mesVenc, diaVenc] = parts;
+      if (!anoVenc || !mesVenc || !diaVenc) return false;
+
+      const dataInicio = new Date(anoVenc, mesVenc - 1, diaVenc, 0, 0, 0, 0);
+
+      // Se o vencimento for do ciclo do dia 30 (ou último dia de fev para cliente dia 30), mantém até o dia 5 do mês seguinte
+      let dataLimite: Date;
+      if (diaVenc >= 28 && (diaVenc === 30 || diaPreferencial === 30)) {
+        dataLimite = new Date(anoVenc, mesVenc, 5, 23, 59, 59, 999);
+      } else {
+        dataLimite = new Date(anoVenc, mesVenc - 1, diaVenc + 5, 23, 59, 59, 999);
+      }
+
+      return hoje >= dataInicio && hoje <= dataLimite;
+    };
+
     const raw: { cob: Cobranca; cli: Cliente }[] = [];
     for (const c of cobrancas) {
       if (c.status === 'pago' || c.status === 'cancelado' || c.status.startsWith('dispensado')) continue;
-      if (!isToday(c.data_vencimento) && !isTomorrow(c.data_vencimento) && c.status !== 'atrasado' && c.status !== 'prometeu_pagar') continue;
 
       const cli = clientes.find(item => item.id === c.cliente_id);
       if (!cli || cli.status === 'inativo') continue;
+
+      if (!estaNaJanelaDe5Dias(c.data_vencimento, cli.dia_vencimento)) continue;
 
       // Respeitar rigorosamente a Data de Início do Serviço: faturas anteriores ao início não entram em ações
       if (cli.data_inicio_servico) {
@@ -508,6 +533,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           <span style={{ fontWeight: 600 }}>{formatDate(cob.data_vencimento)}</span>
                           {venceHoje && <span className="badge badge-atrasado">Hoje!</span>}
                           {venceAmanha && <span className="badge badge-pendente">Amanhã</span>}
+                          {isAtrasado && !venceHoje && <span className="badge badge-atrasado">Vencida</span>}
                         </div>
                       </td>
                       <td>
