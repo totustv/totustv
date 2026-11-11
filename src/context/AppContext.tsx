@@ -219,9 +219,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return d.getFullYear() === currentYear && d.getMonth() + 1 === currentMonth;
     }).length;
 
-    // 2. Cobranças do Mês Atual
+    // 2. Cobranças do Mês Atual (apenas de clientes ativos, ou faturas já pagas)
+    const idsClientesAtivos = new Set(clientes.filter(c => c.status === 'ativo').map(c => c.id));
     const cobrancasDoMes = cobrancas.filter(
-      c => c.competencia_mes === currentMonth && c.competencia_ano === currentYear
+      c =>
+        c.competencia_mes === currentMonth &&
+        c.competencia_ano === currentYear &&
+        (idsClientesAtivos.has(c.cliente_id) || c.status === 'pago')
     );
 
     let vencemHoje = 0;

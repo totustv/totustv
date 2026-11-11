@@ -90,41 +90,57 @@ export const CobrancasPage: React.FC<CobrancasPageProps> = ({
     });
   }, [cobrancas, clientes, promessas]);
 
-  // Filtragem
+  // Filtragem e Ordenação por Data de Vencimento (Dia 10 -> Dia 20 -> Dia 30)
   const cobrancasFiltradas = useMemo(() => {
-    return cobrancasDetalhadas.filter(({ cob, cliente, promessa }) => {
-      // Filtro de mês/ano
-      if (cob.competencia_mes !== mesFiltro || cob.competencia_ano !== anoFiltro) {
-        return false;
-      }
+    return cobrancasDetalhadas
+      .filter(({ cob, cliente, promessa }) => {
+        // Clientes desativados não aparecem para cobrança em Vencimentos
+        if (!cliente || cliente.status === 'inativo') {
+          return false;
+        }
 
-      const diaVenc = parseInt(cob.data_vencimento.split('-')[2], 10);
+        // Filtro de mês/ano
+        if (cob.competencia_mes !== mesFiltro || cob.competencia_ano !== anoFiltro) {
+          return false;
+        }
 
-      switch (filtroAba) {
-        case 'dia_10':
-          return diaVenc === 10 || cliente?.dia_vencimento === 10;
-        case 'dia_20':
-          return diaVenc === 20 || cliente?.dia_vencimento === 20;
-        case 'dia_30':
-          return diaVenc === 30 || cliente?.dia_vencimento === 30;
-        case 'vencem_hoje':
-          return isToday(cob.data_vencimento) && cob.status !== 'pago';
-        case 'vencem_amanha':
-          return isTomorrow(cob.data_vencimento) && cob.status !== 'pago';
-        case 'atrasadas':
-          return cob.status === 'atrasado';
-        case 'aguardando':
-          return cob.status === 'pendente' || cob.status === 'avisado';
-        case 'promessas':
-          return cob.status === 'prometeu_pagar' || Boolean(promessa);
-        case 'pagas':
-          return cob.status === 'pago';
-        case 'canceladas':
-          return cob.status === 'cancelado' || cob.status.startsWith('dispensado');
-        default:
-          return true;
-      }
-    });
+        const diaVenc = parseInt(cob.data_vencimento.split('-')[2], 10);
+
+        switch (filtroAba) {
+          case 'dia_10':
+            return diaVenc === 10 || cliente?.dia_vencimento === 10;
+          case 'dia_20':
+            return diaVenc === 20 || cliente?.dia_vencimento === 20;
+          case 'dia_30':
+            return diaVenc === 30 || cliente?.dia_vencimento === 30;
+          case 'vencem_hoje':
+            return isToday(cob.data_vencimento) && cob.status !== 'pago';
+          case 'vencem_amanha':
+            return isTomorrow(cob.data_vencimento) && cob.status !== 'pago';
+          case 'atrasadas':
+            return cob.status === 'atrasado';
+          case 'aguardando':
+            return cob.status === 'pendente' || cob.status === 'avisado';
+          case 'promessas':
+            return cob.status === 'prometeu_pagar' || Boolean(promessa);
+          case 'pagas':
+            return cob.status === 'pago';
+          case 'canceladas':
+            return cob.status === 'cancelado' || cob.status.startsWith('dispensado');
+          default:
+            return true;
+        }
+      })
+      .sort((a, b) => {
+        const diaA = parseInt(a.cob.data_vencimento.split('-')[2] || '0', 10) || a.cliente?.dia_vencimento || 0;
+        const diaB = parseInt(b.cob.data_vencimento.split('-')[2] || '0', 10) || b.cliente?.dia_vencimento || 0;
+        if (diaA !== diaB) return diaA - diaB;
+
+        const dateDiff = a.cob.data_vencimento.localeCompare(b.cob.data_vencimento);
+        if (dateDiff !== 0) return dateDiff;
+
+        return (a.cliente?.nome || '').localeCompare(b.cliente?.nome || '', 'pt-BR', { sensitivity: 'base' });
+      });
   }, [cobrancasDetalhadas, filtroAba, mesFiltro, anoFiltro]);
 
   // Totais do filtro atual

@@ -133,25 +133,37 @@ export const Header: React.FC<HeaderProps> = ({
       });
   }, [clientes]);
 
-  // 2. COBRANÇAS
+  // 2. COBRANÇAS (apenas de clientes ativos)
   const cobrancasHoje = useMemo(() => {
-    return cobrancas.filter(c => c.status === 'pendente' && isToday(c.data_vencimento));
-  }, [cobrancas]);
+    return cobrancas.filter(c => {
+      const cli = clientesMap.get(c.cliente_id);
+      return cli && cli.status === 'ativo' && c.status === 'pendente' && isToday(c.data_vencimento);
+    });
+  }, [cobrancas, clientesMap]);
 
   const cobrancasAtrasadas = useMemo(() => {
     return cobrancas
-      .filter(c => c.status === 'pendente' && isPastDate(c.data_vencimento))
+      .filter(c => {
+        const cli = clientesMap.get(c.cliente_id);
+        return cli && cli.status === 'ativo' && (c.status === 'pendente' || c.status === 'atrasado') && isPastDate(c.data_vencimento);
+      })
       .sort((a, b) => getOverdueDays(b.data_vencimento) - getOverdueDays(a.data_vencimento));
-  }, [cobrancas]);
+  }, [cobrancas, clientesMap]);
 
   const cobrancasAmanha = useMemo(() => {
-    return cobrancas.filter(c => c.status === 'pendente' && isTomorrow(c.data_vencimento));
-  }, [cobrancas]);
+    return cobrancas.filter(c => {
+      const cli = clientesMap.get(c.cliente_id);
+      return cli && cli.status === 'ativo' && c.status === 'pendente' && isTomorrow(c.data_vencimento);
+    });
+  }, [cobrancas, clientesMap]);
 
-  // 3. PROMESSAS DE PAGAMENTO (Cobranças com status prometeu_pagar)
+  // 3. PROMESSAS DE PAGAMENTO (Cobranças com status prometeu_pagar de clientes ativos)
   const promessasHoje = useMemo(() => {
-    return cobrancas.filter(c => c.status === 'prometeu_pagar');
-  }, [cobrancas]);
+    return cobrancas.filter(c => {
+      const cli = clientesMap.get(c.cliente_id);
+      return cli && cli.status === 'ativo' && c.status === 'prometeu_pagar';
+    });
+  }, [cobrancas, clientesMap]);
 
   // 4. VENCIMENTOS DO DIA ATUAL EM LOTE
   const diaHojeNum = new Date().getDate();

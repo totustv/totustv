@@ -148,7 +148,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }
       }
     }
-    return Array.from(clientMap.values());
+    return Array.from(clientMap.values()).sort((a, b) => {
+      const dateDiff = a.cob.data_vencimento.localeCompare(b.cob.data_vencimento);
+      if (dateDiff !== 0) return dateDiff;
+      return a.cli.nome.localeCompare(b.cli.nome, 'pt-BR', { sensitivity: 'base' });
+    });
   }, [cobrancas, clientes]);
 
   const dispararConfetti = () => {

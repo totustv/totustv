@@ -102,18 +102,20 @@ export const WhatsAppPage: React.FC = () => {
     );
   }, [modelosMensagem, modeloSelecionadoId]);
 
-  // Mapear clientes com a sua cobrança ativa mais recente
+  // Mapear clientes ativos com a sua cobrança ativa mais recente
   const clientesComDados = useMemo(() => {
-    return clientes.map(cli => {
-      const cobs = cobrancas
-        .filter(c => c.cliente_id === cli.id)
-        .sort((a, b) => {
-          if (b.competencia_ano !== a.competencia_ano) return b.competencia_ano - a.competencia_ano;
-          return b.competencia_mes - a.competencia_mes;
-        });
-      const cobrancaAtual = cobs[0];
-      return { cli, cobrancaAtual };
-    });
+    return clientes
+      .filter(cli => cli.status !== 'inativo')
+      .map(cli => {
+        const cobs = cobrancas
+          .filter(c => c.cliente_id === cli.id)
+          .sort((a, b) => {
+            if (b.competencia_ano !== a.competencia_ano) return b.competencia_ano - a.competencia_ano;
+            return b.competencia_mes - a.competencia_mes;
+          });
+        const cobrancaAtual = cobs[0];
+        return { cli, cobrancaAtual };
+      });
   }, [clientes, cobrancas]);
 
   // Filtrar clientes conforme os seletores
