@@ -39,8 +39,14 @@ export const DespesaModal: React.FC<DespesaModalProps> = ({ despesa, onClose }) 
       catNome = novaCategoria.trim();
     }
 
+    const dataPagFinal =
+      formData.status === 'paga'
+        ? formData.data_pagamento || new Date().toISOString().split('T')[0]
+        : formData.data_pagamento || undefined;
+
     salvarDespesa({
       ...formData,
+      data_pagamento: dataPagFinal,
       categoria_nome: catNome,
       valor: Number(formData.valor),
     });

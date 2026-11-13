@@ -251,9 +251,17 @@ export class TotusDBManager {
   }
 
   private loadDeletedIds(): void {
-    // Clientes de teste de seed inicial marcados como excluídos para nunca retornarem
-    const initialTestClientIds = ['cli-1', 'cli-2', 'cli-3', 'cli-4', 'cli-5', 'cli-6', 'cli-7'];
+    // Clientes e despesas de teste/excluídos marcados para nunca retornarem de caches antigos de outros aparelhos
+    const initialTestClientIds = [
+      'cli-1', 'cli-2', 'cli-3', 'cli-4', 'cli-5', 'cli-6', 'cli-7',
+      'cli-8', 'cli-9', 'cli-1792449890947', 'cli-1792795677441', 'cli-1792844161385', 'cli-1792707982537'
+    ];
     initialTestClientIds.forEach(id => this.deletedClientIds.add(id));
+
+    const initialDeletedDespesaIds = [
+      'desp-1', 'desp-2', 'desp-3', 'desp-set-1', 'desp-set-2', 'desp-1792714510552'
+    ];
+    initialDeletedDespesaIds.forEach(id => this.deletedDespesaIds.add(id));
 
     try {
       const storedClients = localStorage.getItem(DELETED_CLIENTS_KEY);
@@ -832,11 +840,25 @@ export class TotusDBManager {
       let sanitizedPayload = payload;
       if (payload && typeof payload === 'object' && mode !== 'delete') {
         sanitizedPayload = { ...payload };
-        if (table === 'clientes') {
-          if (sanitizedPayload.data_nascimento === '') sanitizedPayload.data_nascimento = null;
-          if (sanitizedPayload.data_inicio_servico === '') sanitizedPayload.data_inicio_servico = null;
-          if (sanitizedPayload.indicado_por === '') sanitizedPayload.indicado_por = null;
-          if (sanitizedPayload.reseller_id === '') sanitizedPayload.reseller_id = null;
+        const nullableFields = [
+          'data_nascimento',
+          'data_inicio_servico',
+          'data_pagamento',
+          'data_vencimento',
+          'data_competencia',
+          'indicado_por',
+          'reseller_id',
+          'categoria_id',
+          'cobranca_id',
+          'cliente_id',
+          'origem_id',
+          'bonus_aplicado_id',
+          'cobranca_dispensada_id',
+        ];
+        for (const field of nullableFields) {
+          if (sanitizedPayload[field] === '') {
+            sanitizedPayload[field] = null;
+          }
         }
       }
 
@@ -924,6 +946,18 @@ export class TotusDBManager {
 
       let updated = false;
 
+      // Sincronizar primeiro os IDs excluídos a partir dos logs de auditoria da nuvem
+      // para garantir que exclusões feitas em um aparelho reflitam em todos os outros aparelhos
+      if (resAuditoria.data && resAuditoria.data.length > 0) {
+        for (const log of resAuditoria.data) {
+          if (log.acao === 'excluir_cliente' && log.registro_id) {
+            this.registerDeletedClientId(log.registro_id);
+          } else if (log.acao === 'excluir_despesa' && log.registro_id) {
+            this.registerDeletedDespesaId(log.registro_id);
+          }
+        }
+      }
+
       if (resConfig.data) {
         this.db.config = { ...this.db.config, ...resConfig.data };
         updated = true;
@@ -938,7 +972,14 @@ export class TotusDBManager {
 
         const activeCloud = resClientes.data.filter((c: any) => !this.deletedClientIds.has(c.id));
         const cloudIds = new Set(activeCloud.map((c: any) => c.id));
-        const localNew = this.db.clientes.filter(c => !cloudIds.has(c.id) && !this.deletedClientIds.has(c.id));
+        const nowMs = Date.now();
+        // Apenas preserva clientes locais não presentes na nuvem se acabaram de ser criados (< 60s)
+        // evitando que o cache antigo de outro celular ressuscite clientes excluídos
+        const localNew = this.db.clientes.filter(c => {
+          if (cloudIds.has(c.id) || this.deletedClientIds.has(c.id)) return false;
+          const createdMs = c.created_at ? new Date(c.created_at).getTime() : 0;
+          return createdMs > 0 && nowMs - createdMs < 60000;
+        });
         if (localNew.length > 0) {
           for (const lc of localNew) {
             this.pushToSupabase('clientes', lc);
@@ -1023,7 +1064,7 @@ export class TotusDBManager {
         updated = true;
       }
 
-      if (resDespesas.data && resDespesas.data.length > 0) {
+      if (Array.isArray(resDespesas.data)) {
         const toPurge = resDespesas.data.filter((d: any) => this.deletedDespesaIds.has(d.id));
         for (const dd of toPurge) {
           this.purgeDespesaFromSupabase(dd.id);
@@ -1034,6 +1075,9 @@ export class TotusDBManager {
         const localNew = this.db.despesas.filter(d => !cloudIds.has(d.id) && !this.deletedDespesaIds.has(d.id));
         if (localNew.length > 0) {
           for (const ld of localNew) {
+            if (ld.status === 'paga' && !ld.data_pagamento) {
+              ld.data_pagamento = ld.data_vencimento || ld.data_competencia || new Date().toISOString().split('T')[0];
+            }
             this.pushToSupabase('despesas', ld);
           }
         }
@@ -1928,15 +1972,29 @@ export class TotusDBManager {
       if (idx === -1) throw new Error('Despesa não encontrada');
       const old = this.db.despesas[idx];
 
+      const statusDesp = params.status || old.status;
+      const dataPagDesp =
+        statusDesp === 'paga'
+          ? params.data_pagamento || old.data_pagamento || new Date().toISOString().split('T')[0]
+          : params.data_pagamento || undefined;
+
       despesa = {
         ...old,
         ...params,
+        status: statusDesp,
+        data_pagamento: dataPagDesp,
         valor: Number(params.valor),
         recorrente: Boolean(params.recorrente),
         updated_at: now,
       };
       this.db.despesas[idx] = despesa;
     } else {
+      const statusDesp = params.status || 'pendente';
+      const dataPagDesp =
+        statusDesp === 'paga'
+          ? params.data_pagamento || new Date().toISOString().split('T')[0]
+          : params.data_pagamento || undefined;
+
       despesa = {
         id,
         descricao: params.descricao.trim(),
@@ -1945,8 +2003,8 @@ export class TotusDBManager {
         valor: Number(params.valor),
         data_competencia: params.data_competencia || new Date().toISOString().split('T')[0],
         data_vencimento: params.data_vencimento,
-        data_pagamento: params.data_pagamento,
-        status: params.status || 'pendente',
+        data_pagamento: dataPagDesp,
+        status: statusDesp,
         forma_pagamento: params.forma_pagamento,
         recorrente: Boolean(params.recorrente),
         periodicidade: params.periodicidade || 'mensal',
